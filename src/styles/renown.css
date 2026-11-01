@@ -1,0 +1,469 @@
+/* Renown SMP Interactive 10-Notch Loadout Builder Styles */
+
+:root {
+  --accent-gold: #F59E0B;
+  --bg-card: #0D1016;
+  --border-active: rgba(245, 158, 11, 0.5);
+}
+
+.renown-container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+}
+
+.renown-top-header {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.renown-brand-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.renown-brand-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  image-rendering: pixelated;
+}
+
+.renown-brand-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.renown-brand-sub {
+  font-size: 11px;
+  color: var(--accent-gold);
+  font-weight: 600;
+}
+
+/* Sliding Segmented Track */
+.renown-segmented-track {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--bg-card);
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+}
+
+.renown-sliding-pill {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 0;
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  border: none;
+  pointer-events: none;
+  transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), width 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1;
+}
+
+.renown-slot-tab {
+  position: relative;
+  z-index: 2;
+  appearance: none;
+  border: none;
+  background: transparent !important;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 180ms ease;
+}
+.renown-slot-tab:hover { color: var(--text-primary); }
+.renown-slot-tab.active { color: var(--accent-gold); }
+
+.renown-btn {
+  appearance: none;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: transform 140ms ease, background 140ms ease, border-color 140ms ease;
+}
+.renown-btn:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-active);
+}
+.renown-btn:active { transform: scale(0.97); }
+
+.renown-btn-gold {
+  background: var(--accent-gold);
+  color: #09090B;
+  border-color: var(--accent-gold);
+}
+.renown-btn-gold:hover {
+  background: #F59E0B;
+  border-color: #F59E0B;
+}
+
+/* 10-Notch Loadout Belt Stage */
+.renown-belt-chassis {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+}
+
+.renown-chassis-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.renown-meter-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.renown-notch-bar-wrap {
+  width: 100%;
+  height: 8px;
+  background: var(--bg-card);
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  position: relative;
+}
+
+.renown-notch-bar-fill {
+  height: 100%;
+  background: var(--accent-gold);
+  border-radius: 5px;
+  transition: width 320ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color 200ms ease;
+}
+.renown-notch-bar-fill.full {
+  background: #FACD46;
+  box-shadow: 0 0 10px rgba(224, 180, 48, 0.25);
+}
+.renown-notch-bar-fill.danger {
+  background: #EF4444;
+}
+
+/* Clash Royale Slots */
+.renown-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 1024px) {
+  .renown-slots-grid { grid-template-columns: repeat(5, 1fr); }
+}
+
+.renown-slot {
+  aspect-ratio: 1;
+  background: var(--bg-card);
+  border: 2px dashed var(--border-subtle);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+  overflow: hidden;
+  user-select: none;
+}
+.renown-slot:hover {
+  border-color: var(--border-active);
+  background: var(--bg-elevated);
+  transform: translateY(-2px);
+}
+.renown-slot.keystone-anchor {
+  border-style: solid;
+  border-color: rgba(224, 180, 48, 0.5);
+  animation: keystone-pulse 3s infinite ease-in-out;
+}
+.renown-slot.occupied {
+  border-style: solid;
+  border-color: var(--border-active);
+  background: #141418;
+  animation: socket-snap 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.renown-slot.drag-target-hover {
+  border-color: var(--accent-gold) !important;
+  border-style: dashed !important;
+  background: #252216 !important;
+  transform: scale(1.08) !important;
+  box-shadow: 0 0 20px rgba(224, 180, 48, 0.4) !important;
+}
+
+.renown-slot img {
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.renown-slot .slot-cost {
+  position: absolute;
+  bottom: 4px;
+  right: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.renown-slot .slot-rank {
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-gold);
+}
+
+/* Floating Socket Context Popover */
+.renown-socket-popover {
+  position: absolute;
+  z-index: 500;
+  background: var(--bg-surface);
+  border: 1px solid var(--accent-gold);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7);
+  width: 220px;
+}
+
+/* Workspace */
+.renown-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 20px;
+}
+@media (max-width: 1024px) {
+  .renown-workspace { grid-template-columns: 1fr; }
+}
+
+.renown-library-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.renown-marks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 12px;
+  max-height: 720px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.renown-marks-grid::-webkit-scrollbar { width: 6px; }
+.renown-marks-grid::-webkit-scrollbar-thumb { background: var(--bg-elevated); border-radius: 4px; }
+
+.renown-mark-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+  position: relative;
+  cursor: grab;
+  user-select: none;
+}
+.renown-mark-card:hover {
+  border-color: var(--border-active);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+.renown-mark-card:active { cursor: grabbing; }
+.renown-mark-card.is-dragging { opacity: 0.45; transform: scale(0.96); }
+.renown-mark-card.equipped-in-belt { border-color: var(--accent-gold); background: #141419; }
+.renown-mark-card.unowned-locked { opacity: 0.42; filter: grayscale(0.6); cursor: not-allowed; }
+
+.renown-card-icon {
+  width: 36px;
+  height: 36px;
+  image-rendering: pixelated;
+  background: #111216;
+  border-radius: 8px;
+  padding: 2px;
+  border: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.renown-rank-selector {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-surface);
+  border-radius: 6px;
+  padding: 2px;
+  border: 1px solid var(--border-subtle);
+}
+.renown-rank-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+.renown-rank-btn:hover { color: var(--text-primary); }
+.renown-rank-btn.active {
+  background: var(--bg-elevated);
+  color: var(--accent-gold);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.renown-inspector-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Pills */
+.renown-pill {
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.renown-pill-cost { background: #2A2A32; color: #E4E4E7; }
+.renown-pill-discount { background: #3B2A10; color: var(--accent-gold); border: 1px solid rgba(245, 158, 11, 0.4); }
+.renown-pill-common { background: rgba(160, 165, 175, 0.15); color: #A0A5AF; }
+.renown-pill-uncommon { background: rgba(75, 195, 105, 0.15); color: #4BC369; }
+.renown-pill-rare { background: rgba(70, 150, 230, 0.15); color: #4696E6; }
+.renown-pill-epic { background: rgba(190, 95, 235, 0.15); color: #BE5FEB; }
+.renown-pill-mythic { background: rgba(250, 205, 70, 0.15); color: #FACD46; }
+.renown-pill-keystone { background: rgba(245, 158, 11, 0.2); color: var(--accent-gold); border: 1px solid rgba(245, 158, 11, 0.4); }
+.renown-pill-active { background: #4C1D95; color: #DDD6FE; }
+.renown-pill-locked { background: #26262B; color: #A1A1AA; }
+
+.renown-card-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  flex: 1;
+}
+.renown-rank-active-text {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+.renown-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Modals & Drawer */
+.renown-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(9, 9, 11, 0.8);
+  backdrop-filter: blur(6px);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.renown-modal-dialog {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  width: 540px;
+  max-width: 92vw;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+}
+
+.renown-drawer-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 640px;
+  max-width: 95vw;
+  background: #121215;
+  border-left: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  z-index: 1001;
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.7);
+}
+
+@keyframes keystone-pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(224, 180, 48, 0.15); border-color: rgba(224, 180, 48, 0.4); }
+  50% { box-shadow: 0 0 16px rgba(224, 180, 48, 0.35); border-color: rgba(224, 180, 48, 0.8); }
+}
+
+@keyframes socket-snap {
+  0% { transform: scale(0.88); }
+  70% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
