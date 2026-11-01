@@ -1,5 +1,5 @@
 import React from "react";
-import { Trash2, RotateCcw, Lock, Sparkles, Zap } from "lucide-react";
+import { Trash2, RotateCcw, Lock, Zap, Crown } from "lucide-react";
 import { ALL_MARKS, MarkItem } from "../data/renownData";
 import { KEYSTONE_SLOT_INDEX } from "./deckValidation";
 import { DraggingInfo } from "./useRenownDeck";
@@ -175,15 +175,17 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
             >
               {slotItem && mark ? (
                 <>
+                  {isKeystoneAnchor && <div className="keystone-inner-halo" />}
                   <img
                     src={`assets/marks/mark_${String(mark.id).padStart(2, "0")}.png`}
                     alt={mark.name}
+                    className={isKeystoneAnchor ? "keystone-occupied-img" : undefined}
                     onError={(e) => {
                       (e.target as HTMLElement).style.opacity = "0.2";
                     }}
                   />
-                  <span className="slot-rank">R{slotItem.rank}</span>
-                  <span className="slot-cost">{effCost}N</span>
+                  <span className={`slot-rank ${isKeystoneAnchor ? "keystone-slot-rank" : ""}`}>R{slotItem.rank}</span>
+                  <span className={`slot-cost ${isKeystoneAnchor ? "keystone-slot-cost" : ""}`}>{effCost}N</span>
 
                   {/* Keystone or Active indicator badge */}
                   {mark.keystone && (
@@ -194,9 +196,9 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
                         right: "5px",
                         color: "var(--accent-gold)"
                       }}
-                      title="Keystone Mark"
+                      title="Keystone Mark (Build Centerpiece)"
                     >
-                      <Sparkles size={11} />
+                      <Crown size={12} />
                     </span>
                   )}
                   {mark.active && (
@@ -216,17 +218,17 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
                   {/* Notch pips under mark */}
                   <div className="renown-notch-pips">
                     {Array.from({ length: effCost }).map((_, pIdx) => (
-                      <span key={pIdx} className="renown-notch-pip" />
+                      <span key={pIdx} className={`renown-notch-pip ${isKeystoneAnchor ? "keystone-pip" : ""}`} />
                     ))}
                   </div>
                 </>
               ) : isKeystoneAnchor ? (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", textAlign: "center", padding: "4px" }}>
-                  <Sparkles size={14} color="var(--accent-gold)" />
-                  <span style={{ fontSize: "11px", color: "var(--accent-gold)", fontWeight: 700, letterSpacing: "-0.01em" }}>
+                <div className="keystone-empty-crest">
+                  <Crown size={18} color="var(--accent-gold)" className="keystone-crown-icon" />
+                  <span className="keystone-empty-title">
                     KEYSTONE
                   </span>
-                  <span style={{ fontSize: "11px", color: "rgba(245, 158, 11, 0.7)", fontWeight: 600 }}>
+                  <span className="keystone-empty-sub">
                     ANCHOR
                   </span>
                 </div>

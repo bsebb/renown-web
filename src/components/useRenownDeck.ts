@@ -10,6 +10,16 @@ import {
   checkMarkEligibility,
   EligibilityResult
 } from "./deckValidation";
+import {
+  STORAGE_KEY_BUILD_SLOTS,
+  STORAGE_KEY_ACTIVE_DECK,
+  STORAGE_KEY_OWNED,
+  STORAGE_KEY_MARK_RANKS,
+  loadFromStorage,
+  saveToStorage,
+  getSanitizedBuildSlots,
+  getDefaultOwnedMarks
+} from "./renownStorage";
 
 export type DomainFilter = "ALL" | "Offense" | "Defense" | "Mobility" | "Utility";
 
@@ -25,31 +35,39 @@ export function useRenownDeck() {
   const audio = useMemo(() => new RenownAudioEngine(), []);
   const [sfxEnabled, setSfxEnabled] = useState<boolean>(() => audio.enabled);
 
-  const [activeBuildSlot, setActiveBuildSlot] = useState<number>(1);
-  const [buildSlots, setBuildSlots] = useState<Record<number, (EquippedSlot | null)[]>>(() => {
-    const slot1: (EquippedSlot | null)[] = new Array(10).fill(null);
-    slot1[0] = { markId: 13, rank: 2 }; // Monster Hunter (Cost 2)
-    slot1[1] = { markId: 22, rank: 2 }; // Suit Up (Cost 2)
-    slot1[2] = { markId: 4, rank: 1 };  // Crafting a New Look (Cost 1)
-    slot1[3] = { markId: 5, rank: 1 };  // Caves & Cliffs (Cost 1)
-    slot1[4] = { markId: 43, rank: 1 }; // Cover Me in Debris (Keystone, Cost 3)
-
-    return {
-      1: slot1,
-      2: new Array(10).fill(null),
-      3: new Array(10).fill(null)
-    };
+  const [activeBuildSlot, setActiveBuildSlot] = useState<number>(() => {
+    return loadFromStorage<number>(STORAGE_KEY_ACTIVE_DECK, 1);
   });
 
-  const [markRanks, setMarkRanks] = useState<Record<number, number>>({});
+  const [buildSlots, setBuildSlots] = useState<Record<number, (EquippedSlot | null)[]>>(() => {
+    return getSanitizedBuildSlots();
+  });
+
+  const [markRanks, setMarkRanks] = useState<Record<number, number>>(() => {
+    return loadFromStorage<Record<number, number>>(STORAGE_KEY_MARK_RANKS, {});
+  });
+
   const [viewMode, setViewMode] = useState<"all" | "owned">("all");
   const [ownedMarks, setOwnedMarks] = useState<Record<number, number>>(() => {
-    const initial: Record<number, number> = {};
-    for (let i = 1; i <= 24; i++) initial[i] = i % 3 === 0 ? 2 : 1;
-    initial[43] = 1;
-    initial[36] = 2;
-    return initial;
+    return loadFromStorage<Record<number, number>>(STORAGE_KEY_OWNED, getDefaultOwnedMarks());
   });
+
+  // LocalStorage synchronizations
+  useEffect(() => {
+    saveToStorage(STORAGE_KEY_BUILD_SLOTS, buildSlots);
+  }, [buildSlots]);
+
+  useEffect(() => {
+    saveToStorage(STORAGE_KEY_ACTIVE_DECK, activeBuildSlot);
+  }, [activeBuildSlot]);
+
+  useEffect(() => {
+    saveToStorage(STORAGE_KEY_OWNED, ownedMarks);
+  }, [ownedMarks]);
+
+  useEffect(() => {
+    saveToStorage(STORAGE_KEY_MARK_RANKS, markRanks);
+  }, [markRanks]);
 
   const [activeDomain, setActiveDomain] = useState<DomainFilter>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
