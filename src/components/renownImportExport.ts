@@ -1,7 +1,16 @@
 import { ALL_MARKS } from "../data/renownData";
-import { EquippedSlot } from "./RenownBelt";
-import { CombatStats } from "./RenownInspector";
-import { BELT_TOTAL_SLOTS, BeltCapacityTier } from "./deckValidation";
+import { BELT_TOTAL_SLOTS, BeltCapacityTier, EquippedSlot } from "./deckValidation";
+
+export interface CombatStats {
+  bonusHp: number;
+  totalHp: number;
+  reach: number;
+  reachBonus: number;
+  toughness: number;
+  kbResistPct: number;
+  speedPct: number;
+  safeFall: number;
+}
 
 export interface DeepLinkResult {
   capacity?: BeltCapacityTier;
@@ -31,7 +40,7 @@ export function parseRenownDeepLink(hash: string): DeepLinkResult {
         });
         if (Object.keys(parsed).length > 0) {
           result.ownedMarks = parsed;
-          result.toast = `Imported ${Object.keys(parsed).length} owned marks from link!`;
+          result.toast = `Imported ${Object.keys(parsed).length} owned marks from link.`;
         }
       } catch {
         // ignore malformed hash
@@ -48,11 +57,13 @@ export function parseRenownDeepLink(hash: string): DeepLinkResult {
             const [idStr, rStr] = t.split(":");
             const id = parseInt(idStr, 10);
             const r = parseInt(rStr, 10) || 1;
-            if (id >= 1 && id <= 55) newBelt[idx] = { markId: id, rank: Math.min(Math.max(r, 1), 3) };
+            if (id >= 1 && id <= 55) {
+              newBelt[idx] = { markId: id, rank: Math.min(Math.max(r, 1), 3) };
+            }
           }
         });
         result.belt = newBelt;
-        result.toast = "Imported build loadout from deep link!";
+        result.toast = "Loaded shared deck build.";
       } catch {
         // ignore malformed hash
       }

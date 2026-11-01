@@ -1,0 +1,118 @@
+/* Archetype 1: High-Density Studio & Mobile Dark Utility (v6.2 Pure Neutral Obsidian) */
+/* Zero blue-slate mud, zero radial-gradient haze, single-accent discipline */
+
+:root {
+  /* Font Families */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", system-ui, sans-serif;
+  --font-mono: "SF Mono", "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, monospace;
+
+  /* Calibrated 5-Tier Neutral Obsidian Hierarchy (Zero Blue/Slate Tint) */
+  --tier-0-recessed: #09090B;
+  --tier-1-stage: #09090B;
+  --tier-2-structural: #121215;
+  --tier-3-floating: #1A1A1F;
+  --tier-4-elevated: #24242B;
+
+  /* Legacy Bridge Tokens */
+  --bg-canvas: var(--tier-1-stage);
+  --bg-surface: var(--tier-2-structural);
+  --bg-elevated: var(--tier-3-floating);
+  --bg-glass: rgba(18, 18, 21, 0.86);
+
+  /* iOS Safe Area Padding */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  /* Subtle Depth & Hairline Geometry */
+  --specular-rim: inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+  --specular-rim-strong: inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
+  --shadow-recessed: inset 0 1px 2px 0 rgba(0, 0, 0, 0.65);
+  --shadow-floating: 0 12px 32px -6px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.07);
+  --shadow-hud: 0 20px 44px -10px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08);
+
+  /* Theme-Adaptive Control & Optical Groove Tokens */
+  --control-bg: rgba(255, 255, 255, 0.05);
+  --control-bg-hover: rgba(255, 255, 255, 0.09);
+  --control-border: rgba(255, 255, 255, 0.08);
+  --control-pill-bg: #24242B;
+  --groove-border: rgba(255, 255, 255, 0.06);
+  --groove-specular: rgba(255, 255, 255, 0.03);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.14);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.28);
+
+  /* Typography Scale (Hard 10px Minimum Floor - Law 9) */
+  --font-size-micro: 10px;
+  --font-size-compact: 11px;
+  --font-size-base: 12px;
+  --font-size-body: 14px;
+  --font-size-heading: 18px;
+  --font-size-hero: 28px;
+
+  /* Crisp Ink Contrast Hierarchy */
+  --text-primary: #F4F4F5;
+  --text-secondary: #A1A1AA;
+  --text-muted: #71717A;
+
+  /* Restrained Single Brand Accent + Semantic Status */
+  --accent-primary: #F59E0B;
+  --accent-foreground: #09090B;
+  --accent-muted: rgba(245, 158, 11, 0.12);
+  --accent-glow: none;
+  --accent-cleared: #10B981;
+  --accent-warning: #EF4444;
+
+  /* Hairlines & Dividers */
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-divider: rgba(255, 255, 255, 0.06);
+  --border-glass: rgba(255, 255, 255, 0.08);
+
+  /* Kowalski Spring Kinematics */
+  --spring-switch-linear: linear(0, 0.012, 0.047 2.2%, 0.188 4.7%, 0.442 7.6%, 0.732 11.2%, 0.912 14.8%, 1.002 18.2%, 1.038 21.4%, 1.045 23.8%, 1.037 26.8%, 1.018 30.2%, 1.004 34.0%, 0.997 38.6%, 1);
+  --ease-apple-pro: cubic-bezier(0.16, 1, 0.3, 1);
+  --spring-snap: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --spring-detent: cubic-bezier(0.1, 1, 0.1, 1);
+
+  --backdrop-blur: blur(20px) saturate(180%);
+}
+
+/* Semantic Surface & Tier Classes */
+.tier-0, .bg-recessed { background-color: var(--tier-0-recessed); }
+.tier-1, .bg-canvas { background-color: var(--tier-1-stage); }
+.tier-2, .bg-surface { background-color: var(--tier-2-structural); }
+.tier-3, .bg-elevated { background-color: var(--tier-3-floating); }
+.tier-4, .bg-hud { background-color: var(--tier-4-elevated); box-shadow: var(--shadow-hud); }
+
+.bg-glass {
+  background-color: var(--bg-glass);
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+}
+
+.specular-rim { box-shadow: var(--specular-rim); }
+.specular-rim-strong { box-shadow: var(--specular-rim-strong); }
+
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); }
+
+.border-subtle { border-color: var(--border-subtle); }
+.border-divider { border-color: var(--border-divider); }
+.border-glass { border-color: var(--border-glass); }
+
+.font-tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.text-micro { font-size: var(--font-size-micro); line-height: 1.3; }
+.text-compact { font-size: var(--font-size-compact); line-height: 1.35; }
+.text-base { font-size: var(--font-size-base); line-height: 1.4; }
+
+.workspace-viewport {
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  user-select: none;
+}

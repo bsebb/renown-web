@@ -1,201 +1,323 @@
 import React from "react";
-import { Lock, Sparkles, Zap } from "lucide-react";
+import {
+  Crown,
+  Zap,
+  Check,
+  Lock,
+  Info,
+  Search,
+  X,
+  ArrowUpDown
+} from "lucide-react";
 import { MarkItem } from "../data/renownData";
-import { EquippedSlot } from "./RenownBelt";
-import { EligibilityResult } from "./deckValidation";
+import {
+  BeltCapacityTier,
+  EquippedSlot,
+  EligibilityResult,
+  findValidSwapSlots
+} from "./deckValidation";
+import { SlidingSegmented } from "./SlidingSegmented";
+import { DomainFilter, SelectedCardState, SortMode } from "./useRenownDeck";
+import { ActivePointerDrag } from "./usePointerDeckDrag";
 
 interface RenownGridProps {
   marks: MarkItem[];
   currentBelt: (EquippedSlot | null)[];
-  markRanks: Record<number, number>;
   ownedMarks: Record<number, number>;
   viewMode: "all" | "owned";
+  onChangeViewMode: (mode: "all" | "owned") => void;
+  activeDomain: DomainFilter;
+  onChangeDomain: (domain: DomainFilter) => void;
+  sortMode: SortMode;
+  onCycleSort: () => void;
+  searchQuery: string;
+  onChangeSearch: (q: string) => void;
+  beltCapacity: BeltCapacityTier;
+  selectedCard: SelectedCardState | null;
+  onSelectCollectionCard: (markId: number) => void;
+  onUseCard: (mark: MarkItem) => void;
+  onOpenCardInfo: (markId: number) => void;
+  onSetCardRank: (markId: number, rank: number) => void;
+  getRankForMark: (markId: number) => number;
   getEffectiveCost: (mark: MarkItem, rank: number) => number;
   checkEligibility: (mark: MarkItem, rank: number) => EligibilityResult;
-  onDragStartCard: (e: React.DragEvent, markId: number) => void;
-  onLibraryRankChange: (markId: number, rank: number, e: React.MouseEvent) => void;
-  onCardToggleEquip: (mark: MarkItem) => void;
+  activeDrag: ActivePointerDrag | null;
+  onStartCardPointerDrag: (
+    e: React.PointerEvent,
+    mark: MarkItem,
+    rank: number,
+    cost: number
+  ) => void;
+  shouldSuppressClick: () => boolean;
 }
+
+const SORT_LABELS: Record<SortMode, string> = {
+  cost: "By Notch",
+  tier: "By Rarity",
+  id: "By #ID"
+};
 
 export const RenownGrid: React.FC<RenownGridProps> = ({
   marks,
   currentBelt,
-  markRanks,
   ownedMarks,
   viewMode,
+  onChangeViewMode,
+  activeDomain,
+  onChangeDomain,
+  sortMode,
+  onCycleSort,
+  searchQuery,
+  onChangeSearch,
+  beltCapacity,
+  selectedCard,
+  onSelectCollectionCard,
+  onUseCard,
+  onOpenCardInfo,
+  onSetCardRank,
+  getRankForMark,
   getEffectiveCost,
   checkEligibility,
-  onDragStartCard,
-  onLibraryRankChange,
-  onCardToggleEquip
+  activeDrag,
+  onStartCardPointerDrag,
+  shouldSuppressClick
 }) => {
   return (
-    <div className="renown-marks-grid">
-      {marks.map((m) => {
-        const isEquipped = currentBelt.some((s) => s?.markId === m.id);
-        const currentItem = currentBelt.find((s) => s?.markId === m.id);
-        const currentRank = currentItem ? currentItem.rank : markRanks[m.id] || 1;
-        const effCost = getEffectiveCost(m, currentRank);
-        const isDiscounted = !m.keystone && m.cost >= 3 && currentRank === 3;
-        const isOwned = viewMode !== "owned" || Boolean(ownedMarks[m.id]);
-        const ownedRank = ownedMarks[m.id] || 0;
-        const descParts = m.desc.split(" | ");
+    <section className="cr-collection-section" aria-label="Card Collection">
+      {/* Collection Filter & Search Toolbar */}
+      <div className="cr-collection-toolbar">
+        <div className="cr-domain-scroll">
+          <SlidingSegmented
+            options={[
+              { id: "ALL", label: "All (55)" },
+              { id: "Offense", label: "Offense" },
+              { id: "Defense", label: "Defense" },
+              { id: "Mobility", label: "Mobility" },
+              { id: "Utility", label: "Utility" }
+            ]}
+            value={activeDomain}
+            onChange={(val) => onChangeDomain(val as DomainFilter)}
+          />
+        </div>
 
-        const eligibility = checkEligibility(m, currentRank);
+        <div className="cr-toolbar-right">
+          <SlidingSegmented
+            options={[
+              { id: "all", label: "Theorycraft" },
+              { id: "owned", label: `Owned (${Object.keys(ownedMarks).length})` }
+            ]}
+            value={viewMode}
+            onChange={(val) => onChangeViewMode(val as "all" | "owned")}
+          />
 
-        return (
-          <div
-            key={m.id}
-            className={`renown-mark-card ${isEquipped ? "equipped-in-belt" : ""} ${
-              !isOwned ? "unowned-locked" : ""
-            }`}
-            style={{
-              opacity: !isOwned || (!isEquipped && !eligibility.eligible) ? 0.7 : 1
-            }}
-            draggable={isOwned && (isEquipped || eligibility.eligible)}
-            onDragStart={(e) => isOwned && onDragStartCard(e, m.id)}
-            title={
-              !isOwned
-                ? `${m.name} is locked in your collection. Unlock via: ${m.advancement}`
-                : isEquipped
-                ? `${m.name} (Equipped in Belt)`
-                : eligibility.reason || `${m.name} - Drag to belt or click to equip`
-            }
+          <button
+            type="button"
+            className="renown-btn"
+            onClick={onCycleSort}
+            title="Cycle card sort order"
           >
-            <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
-              <img
-                src={`assets/marks/mark_${String(m.id).padStart(2, "0")}.png`}
-                className="renown-card-icon"
-                alt={m.name}
-                onError={(e) => {
-                  (e.target as HTMLElement).style.opacity = "0.2";
+            <ArrowUpDown size={13} />
+            <span>{SORT_LABELS[sortMode]}</span>
+          </button>
+
+          <div className="cr-search-box">
+            <Search size={14} className="cr-search-icon" />
+            <input
+              type="text"
+              placeholder="Search cards..."
+              value={searchQuery}
+              onChange={(e) => onChangeSearch(e.target.value)}
+              className="cr-search-input"
+              aria-label="Search Marks"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                className="cr-search-clear"
+                onClick={() => onChangeSearch("")}
+                aria-label="Clear search"
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Clash Royale Collectible Portrait Card Grid */}
+      <div className="cr-collection-grid">
+        {marks.map((m) => {
+          const isEquipped = currentBelt.some((s) => s?.markId === m.id);
+          const currentRank = getRankForMark(m.id);
+          const effCost = getEffectiveCost(m, currentRank);
+          const isDiscounted = !m.keystone && m.cost >= 3 && currentRank === 3;
+          const isOwned = viewMode !== "owned" || Boolean(ownedMarks[m.id]);
+
+          const isSelected =
+            selectedCard?.source === "collection" && selectedCard.markId === m.id;
+          const isBeingDragged =
+            activeDrag?.source === "library" && activeDrag.markId === m.id;
+
+          const directEligibility = checkEligibility(m, currentRank);
+          const canSwap =
+            !isEquipped &&
+            !directEligibility.eligible &&
+            isOwned &&
+            findValidSwapSlots(currentBelt, m, currentRank, viewMode, ownedMarks, beltCapacity)
+              .length > 0;
+
+          const primaryCtaLabel = isEquipped
+            ? "Remove"
+            : directEligibility.eligible
+            ? "Use"
+            : canSwap
+            ? "Swap"
+            : "Locked";
+
+          return (
+            <div
+              key={m.id}
+              className={[
+                "cr-card-wrapper",
+                isSelected ? "is-expanded" : ""
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              <div
+                role="button"
+                tabIndex={0}
+                aria-label={`${m.name}, ${m.keystone ? "0 Notches Keystone" : `${effCost} Notches`}`}
+                className={[
+                  "cr-collectible-card",
+                  `rarity-${m.tier.toLowerCase()}`,
+                  isEquipped ? "is-in-deck" : "",
+                  isSelected ? "is-selected" : "",
+                  !isOwned ? "is-unowned" : "",
+                  isBeingDragged ? "is-drag-origin" : ""
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                onPointerDown={(e) => {
+                  if (isOwned && !isEquipped) {
+                    onStartCardPointerDrag(e, m, currentRank, effCost);
+                  }
                 }}
-              />
-              <div style={{ flex: 1, minWidth: 0 }}>
+                onClick={() => {
+                  if (shouldSuppressClick()) return;
+                  onSelectCollectionCard(m.id);
+                }}
+                onDoubleClick={() => {
+                  if (isOwned) onUseCard(m);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onSelectCollectionCard(m.id);
+                  }
+                }}
+              >
+                {/* Top-Left Notch Elixir Cost Gem */}
+                <span
+                  className={`cr-cost-gem ${
+                    m.keystone ? "is-keystone-gem" : isDiscounted ? "is-discounted-gem" : ""
+                  }`}
+                >
+                  {m.keystone ? "0N" : `${effCost}N`}
+                </span>
+
+                {/* Single clean top-right role/deck indicator */}
+                {isEquipped ? (
+                  <span className="cr-equipped-check" title="Equipped in Battle Deck">
+                    <Check size={11} strokeWidth={3} />
+                  </span>
+                ) : !isOwned ? (
+                  <span className="cr-corner-icon" title="Locked in Collection">
+                    <Lock size={11} />
+                  </span>
+                ) : m.keystone ? (
+                  <span className="cr-corner-icon is-gold" title="Zero-Notch Keystone">
+                    <Crown size={11} />
+                  </span>
+                ) : m.active ? (
+                  <span className="cr-corner-icon" title="Shift+F Active">
+                    <Zap size={11} />
+                  </span>
+                ) : null}
+
+                {/* Pixel-Art Mark Emblem */}
+                <div className="cr-card-art-stage">
+                  <img
+                    src={`assets/marks/mark_${String(m.id).padStart(2, "0")}.png`}
+                    alt={m.name}
+                    className="cr-card-sprite"
+                    draggable={false}
+                    loading="lazy"
+                  />
+                </div>
+
+                {/* Card Title + Mastery Rank Bar */}
+                <div className="cr-card-meta">
+                  <div className="cr-card-title">{m.name}</div>
+                  <div className="cr-card-level-row">
+                    <span className="cr-card-domain">{m.domain}</span>
+                    <div className="cr-rank-pips" aria-label={`Rank ${currentRank}`}>
+                      {[1, 2, 3].map((r) => (
+                        <span
+                          key={r}
+                          className={`cr-rank-pip ${r <= currentRank ? "is-lit" : ""}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Clash Royale Tap-to-Expand Floating Action Tray */}
+              {isSelected && (
                 <div
-                  style={{
-                    fontSize: "13px",
-                    fontWeight: 700,
-                    color: "var(--text-primary)",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis"
-                  }}
+                  className="cr-card-action-tray"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  {m.name}
-                </div>
+                  <div className="cr-tray-rank-row">
+                    {[1, 2, 3].map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        className={`cr-tray-rank-btn ${currentRank === r ? "active" : ""}`}
+                        onClick={() => onSetCardRank(m.id, r)}
+                      >
+                        R{r}
+                      </button>
+                    ))}
+                  </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: "5px", flexWrap: "wrap", marginTop: "4px" }}>
-                  <span className={`renown-pill ${isDiscounted ? "renown-pill-discount" : "renown-pill-cost"}`}>
-                    {m.keystone ? "0 Notches" : `${effCost} Notch${effCost === 1 ? "" : "es"}${isDiscounted ? " (R3 -1N)" : ""}`}
-                  </span>
-                  <span className={`renown-pill renown-pill-${m.tier.toLowerCase()}`}>
-                    {m.tier}
-                  </span>
-                  {m.keystone && (
-                    <span className="renown-pill renown-pill-keystone" style={{ gap: "3px" }}>
-                      <Sparkles size={10} />
-                      <span>Keystone</span>
-                    </span>
-                  )}
-                  {m.active && (
-                    <span className="renown-pill renown-pill-active" style={{ gap: "3px" }}>
-                      <Zap size={10} />
-                      <span>Active</span>
-                    </span>
-                  )}
-                  {!isOwned && (
-                    <span className="renown-pill renown-pill-locked">
-                      <Lock size={10} />
-                      <span>Locked</span>
-                    </span>
-                  )}
-                  {viewMode === "owned" && isOwned && (
-                    <span className="renown-pill" style={{ background: "rgba(56, 189, 248, 0.15)", color: "#38BDF8" }}>
-                      Mastery R{ownedRank}
-                    </span>
-                  )}
-                  {!isEquipped && !eligibility.eligible && eligibility.reason && (
-                    <span
-                      className="renown-pill"
-                      style={{
-                        background: "rgba(239, 68, 68, 0.15)",
-                        color: "#FCA5A5",
-                        border: "1px solid rgba(239, 68, 68, 0.3)"
-                      }}
-                      title={eligibility.reason}
+                  <div className="cr-tray-buttons">
+                    <button
+                      type="button"
+                      className={`cr-tray-use-btn ${
+                        isEquipped ? "is-remove" : !isOwned ? "is-disabled" : ""
+                      }`}
+                      disabled={!isOwned && !isEquipped}
+                      onClick={() => onUseCard(m)}
                     >
-                      {eligibility.actionLabel}
-                    </span>
-                  )}
+                      {primaryCtaLabel}
+                    </button>
+                    <button
+                      type="button"
+                      className="cr-tray-info-btn"
+                      onClick={() => onOpenCardInfo(m.id)}
+                      aria-label={`View ${m.name} details`}
+                    >
+                      <Info size={14} />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </div>
-
-            <div className="renown-card-desc">
-              {descParts.map((part, pIdx) => {
-                const p = part.trim();
-                const isR1 = currentRank === 1 && p.startsWith("R1:");
-                const isR2 = currentRank === 2 && p.startsWith("R2:");
-                const isR3 = currentRank === 3 && p.startsWith("R3:");
-                const isActiveText = isR1 || isR2 || isR3;
-
-                return (
-                  <span key={pIdx}>
-                    {pIdx > 0 && " | "}
-                    <span className={isActiveText ? "renown-rank-active-text" : undefined}>{p}</span>
-                  </span>
-                );
-              })}
-            </div>
-
-            <div className="renown-card-footer">
-              <div className="renown-rank-selector">
-                {[1, 2, 3].map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    className={`renown-rank-btn ${currentRank === r ? "active" : ""}`}
-                    onClick={(e) => onLibraryRankChange(m.id, r, e)}
-                  >
-                    R{r}
-                  </button>
-                ))}
-              </div>
-
-              {isEquipped ? (
-                <button
-                  type="button"
-                  className="renown-btn renown-btn-gold"
-                  style={{ padding: "4px 10px", fontSize: "11px" }}
-                  onClick={() => onCardToggleEquip(m)}
-                >
-                  Unequip
-                </button>
-              ) : !eligibility.eligible ? (
-                <button
-                  type="button"
-                  className="renown-btn"
-                  style={{ padding: "4px 10px", fontSize: "11px", opacity: 0.5, cursor: "not-allowed" }}
-                  disabled
-                  title={eligibility.reason}
-                >
-                  {eligibility.actionLabel}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className={`renown-btn ${m.keystone ? "renown-btn-gold" : ""}`}
-                  style={{ padding: "4px 10px", fontSize: "11px" }}
-                  onClick={() => onCardToggleEquip(m)}
-                >
-                  {eligibility.actionLabel}
-                </button>
               )}
             </div>
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+    </section>
   );
 };

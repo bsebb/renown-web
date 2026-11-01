@@ -1,72 +1,77 @@
-/* Renown SMP Interactive 10-Notch Loadout Builder Styles */
+/* Renown SMP v2.2 - Clash Royale Style Interactive Deck Builder */
+/* Pure Flat Neutral Obsidian (#09090B / #121215 / #1A1A1F) + Sovereign Gold (#F59E0B) */
 
-:root {
-  --accent-gold: #F59E0B;
-  --bg-card: #0D1016;
-  --border-active: rgba(245, 158, 11, 0.5);
-}
-
-.renown-container {
-  max-width: 1440px;
+.cr-app-shell {
+  max-width: 1240px;
   margin: 0 auto;
-  padding: 32px 24px 80px;
+  padding: 20px 20px 64px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
   color: var(--text-primary);
   font-family: var(--font-sans);
 }
 
-.renown-top-header {
-  background: var(--bg-surface);
+/* Masthead Header */
+.cr-top-header {
+  background: var(--tier-2-structural);
   border: 1px solid var(--border-subtle);
+  box-shadow: var(--specular-rim);
   border-radius: 14px;
-  padding: 14px 20px;
+  padding: 12px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   flex-wrap: wrap;
-  gap: 16px;
 }
 
-.renown-brand-group {
+.cr-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 11px;
 }
 
-.renown-brand-logo {
-  width: 36px;
-  height: 36px;
+.cr-brand-logo {
+  width: 34px;
+  height: 34px;
   border-radius: 8px;
   image-rendering: pixelated;
 }
 
-.renown-brand-title {
-  font-size: 1.15rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+.cr-brand-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
   color: var(--text-primary);
+  line-height: 1.15;
 }
 
-.renown-brand-sub {
+.cr-brand-sub {
   font-size: 11px;
   color: var(--accent-gold);
   font-weight: 600;
 }
 
+.cr-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 /* Sliding Segmented Track */
 .renown-segmented-track {
   position: relative;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  background: var(--bg-card);
+  background: var(--tier-0-recessed);
   padding: 3px;
-  border-radius: 10px;
+  border-radius: 9px;
   border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-recessed);
   overflow-x: auto;
   scrollbar-width: none;
-  -ms-overflow-style: none;
 }
 .renown-segmented-track::-webkit-scrollbar {
   display: none;
@@ -78,11 +83,11 @@
   bottom: 3px;
   left: 0;
   border-radius: 6px;
-  background: var(--bg-elevated);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  background: var(--control-pill-bg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
   border: none;
   pointer-events: none;
-  transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), width 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), width 220ms cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 1;
 }
 
@@ -91,28 +96,34 @@
   z-index: 2;
   appearance: none;
   border: none;
-  background: transparent !important;
+  background: transparent;
   color: var(--text-secondary);
   font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 600;
-  padding: 6px 12px;
+  padding: 5px 11px;
   border-radius: 6px;
   cursor: pointer;
   flex-shrink: 0;
   white-space: nowrap;
-  transition: color 180ms ease;
+  transition: color 160ms ease;
 }
-.renown-slot-tab:hover { color: var(--text-primary); }
-.renown-slot-tab.active { color: var(--accent-gold); }
+.renown-slot-tab:hover {
+  color: var(--text-primary);
+}
+.renown-slot-tab.active {
+  color: var(--accent-gold);
+}
 
+/* Buttons */
 .renown-btn {
   appearance: none;
   border: 1px solid var(--border-subtle);
-  background: var(--bg-card);
+  background: var(--tier-3-floating);
+  box-shadow: var(--specular-rim);
   color: var(--text-primary);
   padding: 7px 12px;
-  border-radius: 8px;
+  border-radius: 9px;
   font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 600;
@@ -120,576 +131,1384 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: transform 140ms ease, background 140ms ease, border-color 140ms ease;
+  white-space: nowrap;
+  transition: transform 140ms ease, background-color 140ms ease, border-color 140ms ease;
 }
-.renown-btn:hover {
-  background: var(--bg-elevated);
-  border-color: var(--border-active);
+.renown-btn:hover:not(:disabled) {
+  background: var(--tier-4-elevated);
+  border-color: rgba(255, 255, 255, 0.16);
 }
-.renown-btn:active { transform: scale(0.97); }
+.renown-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+.renown-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 
 .renown-btn-gold {
   background: var(--accent-gold);
   color: #09090B;
   border-color: var(--accent-gold);
+  font-weight: 700;
 }
-.renown-btn-gold:hover {
-  background: #F59E0B;
-  border-color: #F59E0B;
+.renown-btn-gold:hover:not(:disabled) {
+  background: #FBBF24;
+  border-color: #FBBF24;
 }
 
-/* 10-Notch Loadout Belt Stage */
-.renown-belt-chassis {
-  background: var(--bg-surface);
+.cr-btn-danger {
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #FCA5A5;
+}
+.cr-btn-danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.55);
+}
+
+/* Battle Deck Stage */
+.cr-battle-deck-stage {
+  background: var(--tier-2-structural);
   border: 1px solid var(--border-subtle);
-  border-radius: 14px;
-  padding: 18px 22px;
+  box-shadow: var(--shadow-floating);
+  border-radius: 16px;
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  position: relative;
+  transition: border-color 200ms ease;
+}
+.cr-battle-deck-stage.swap-mode-active {
+  border-color: var(--accent-gold);
 }
 
-.renown-chassis-header {
+.cr-deck-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
   flex-wrap: wrap;
-  gap: 12px;
 }
 
-.renown-meter-badge {
+.cr-deck-tabs-group {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cr-deck-label {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-right: 2px;
+}
+
+.cr-deck-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Swap Mode Banner */
+.cr-swap-banner {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  border-radius: 11px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  animation: tray-pop 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cr-swap-banner-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.cr-swap-thumb {
+  width: 34px;
+  height: 34px;
+  image-rendering: pixelated;
+  background: var(--tier-0-recessed);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 3px;
+  flex-shrink: 0;
+}
+
+.cr-swap-title {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.cr-swap-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* Desktop 9-Slot Row */
+.cr-deck-desktop-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 1.14fr) repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  align-items: center;
+}
+
+.cr-deck-mobile-layout {
+  display: none;
+}
+
+/* Collectible Deck Slot Card */
+.cr-deck-slot {
+  min-width: 0;
+  aspect-ratio: 3 / 3.85;
+  background: var(--tier-0-recessed);
+  border: 1.5px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), border-color 160ms ease, background-color 160ms ease, opacity 160ms ease;
+}
+
+.cr-deck-slot.is-occupied {
+  background: var(--tier-3-floating);
+  border-style: solid;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: var(--specular-rim), 0 6px 14px rgba(0, 0, 0, 0.35);
+  justify-content: space-between;
+  padding: 24px 6px 6px;
+}
+
+.cr-deck-slot:hover:not(.is-locked-cap) {
+  transform: translateY(-3px);
+  border-color: rgba(245, 158, 11, 0.55);
+}
+
+.cr-deck-slot:active:not(.is-locked-cap) {
+  transform: scale(0.95);
+}
+
+.cr-deck-slot.is-keystone-slot {
+  border-style: solid;
+  border-width: 2px;
+  border-color: rgba(245, 158, 11, 0.65);
+  background: #17140D;
+  box-shadow: 0 0 22px rgba(245, 158, 11, 0.2), var(--specular-rim);
+}
+.cr-deck-slot.is-keystone-slot.is-occupied {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 26px rgba(245, 158, 11, 0.3), var(--specular-rim);
+}
+
+.cr-deck-slot.is-selected {
+  border-color: var(--accent-gold);
+  transform: translateY(-4px);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.35), 0 10px 22px rgba(0, 0, 0, 0.5);
+}
+
+.cr-deck-slot.just-equipped,
+.cr-mobile-keystone-bar.just-equipped {
+  animation: card-equip-pop 340ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.cr-deck-slot.is-wiggling,
+.cr-mobile-keystone-bar.is-wiggling {
+  border-style: solid;
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.35), 0 8px 20px rgba(245, 158, 11, 0.25);
+  animation: cr-wiggle 440ms ease-in-out infinite;
+}
+
+.cr-deck-slot.is-swap-dimmed {
+  opacity: 0.32;
+  filter: grayscale(0.5);
+}
+
+.cr-deck-slot.drop-valid {
+  border-color: rgba(245, 158, 11, 0.5);
+}
+.cr-deck-slot.drop-invalid {
+  opacity: 0.3;
+}
+.cr-deck-slot.is-drag-hover,
+.cr-mobile-keystone-bar.is-drag-hover {
+  border-color: var(--accent-gold);
+  transform: scale(1.06);
+  background: #231E12;
+}
+.cr-deck-slot.is-drag-origin,
+.cr-collectible-card.is-drag-origin {
+  opacity: 0.35;
+  transform: scale(0.94);
+}
+.cr-deck-slot.is-locked-cap {
+  opacity: 0.42;
+  cursor: pointer;
+}
+
+.cr-slot-sprite {
+  width: 42px;
+  height: 42px;
+  image-rendering: pixelated;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.55));
+}
+.cr-deck-slot.is-keystone-slot .cr-slot-sprite {
+  width: 48px;
+  height: 48px;
+}
+
+.cr-slot-footer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+}
+
+.cr-slot-name {
+  font-size: 10.5px;
   font-weight: 600;
+  color: var(--text-primary);
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.cr-slot-level {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent-gold);
   font-variant-numeric: tabular-nums;
 }
 
-.renown-notch-bar-wrap {
-  width: 100%;
-  height: 8px;
-  background: var(--bg-card);
-  border-radius: 6px;
-  overflow: hidden;
-  border: 1px solid var(--border-subtle);
-  position: relative;
-}
-
-.renown-notch-bar-fill {
-  height: 100%;
-  background: var(--accent-gold);
-  border-radius: 5px;
-  transition: width 320ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color 200ms ease;
-}
-.renown-notch-bar-fill.full {
-  background: #FACD46;
-  box-shadow: 0 0 10px rgba(224, 180, 48, 0.25);
-}
-.renown-notch-bar-fill.danger {
-  background: #EF4444;
-}
-
-/* Symmetrical 9-Slot Belt (4 Passive + 1 Center Keystone Anchor + 4 Passive) */
-.renown-slots-grid {
-  display: grid;
-  grid-template-columns: repeat(9, 1fr);
-  gap: 10px;
-}
-
-@media (max-width: 1024px) {
-  .renown-slots-grid { grid-template-columns: repeat(3, 1fr); }
-}
-
-.renown-slot {
-  aspect-ratio: 1;
-  background: var(--bg-card);
-  border: 2px dashed var(--border-subtle);
-  border-radius: 12px;
+.cr-empty-keystone {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  position: relative;
-  cursor: pointer;
-  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
-  overflow: hidden;
-  user-select: none;
-}
-.renown-slot:hover {
-  border-color: var(--border-active);
-  background: var(--bg-elevated);
-  transform: translateY(-2px);
-}
-.renown-slot.keystone-anchor {
-  border: 2px solid var(--accent-gold);
-  background: #18150D;
-  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25), 0 0 16px rgba(245, 158, 11, 0.35);
-  animation: keystone-epic-pulse 3.5s infinite ease-in-out;
-  position: relative;
-  z-index: 4;
-}
-
-@media (min-width: 1025px) {
-  .renown-slot.keystone-anchor {
-    transform: scale(1.10);
-  }
-  .renown-slot.keystone-anchor:hover {
-    transform: scale(1.14) translateY(-2px);
-  }
-}
-
-.renown-slot.keystone-anchor.occupied {
-  border-color: #F59E0B;
-  background: #1E1A0E;
-  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.4), 0 0 24px rgba(245, 158, 11, 0.45);
-}
-
-.keystone-inner-halo {
-  position: absolute;
-  inset: 6px;
-  border-radius: 50%;
-  border: 1px dashed rgba(245, 158, 11, 0.4);
-  pointer-events: none;
-  animation: keystone-halo-spin 16s linear infinite;
-}
-
-.keystone-occupied-img {
-  width: 44px !important;
-  height: 44px !important;
-  filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.75));
-  z-index: 2;
-}
-
-.keystone-slot-rank {
-  color: #FDE68A !important;
-  font-weight: 800 !important;
-  text-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
-}
-
-.keystone-slot-cost {
-  color: #F59E0B !important;
-  font-weight: 800 !important;
-  background: rgba(245, 158, 11, 0.25) !important;
-  padding: 1px 5px !important;
-  border-radius: 4px;
-}
-
-.keystone-pip {
-  background: #F59E0B !important;
-  box-shadow: 0 0 6px #F59E0B, 0 0 10px rgba(245, 158, 11, 0.5) !important;
-}
-
-.keystone-empty-crest {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   gap: 3px;
   text-align: center;
-  padding: 4px;
-  width: 100%;
-  height: 100%;
 }
-
-.keystone-crown-icon {
-  filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.8));
-  animation: keystone-float 3s ease-in-out infinite;
-}
-
-.keystone-empty-title {
+.cr-empty-key-title {
   font-size: 11px;
-  color: var(--accent-gold);
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
-  line-height: 1;
-}
-
-.keystone-empty-sub {
-  font-size: 10px;
-  color: rgba(245, 158, 11, 0.75);
   font-weight: 700;
-  letter-spacing: 0.06em;
-  line-height: 1;
+  color: var(--accent-gold);
 }
-.renown-slot.active-marked {
-  border-color: #8B5CF6 !important;
-  box-shadow: 0 0 14px rgba(139, 92, 246, 0.25);
-}
-.renown-slot.slot-capacity-locked {
-  border-color: rgba(255, 255, 255, 0.05);
-  background: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.02) 8px, rgba(0, 0, 0, 0.25) 8px, rgba(0, 0, 0, 0.25) 16px);
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-.renown-slot.slot-capacity-locked:hover {
-  transform: none;
-  border-color: rgba(255, 255, 255, 0.08);
-}
-.renown-slot.drag-drop-valid {
-  border-color: #38BDF8 !important;
-  background: rgba(56, 189, 248, 0.08) !important;
-  box-shadow: 0 0 16px rgba(56, 189, 248, 0.25);
-}
-.renown-slot.drag-drop-invalid {
-  border-color: rgba(239, 68, 68, 0.4) !important;
-  background: rgba(239, 68, 68, 0.05) !important;
-  cursor: no-drop !important;
-  opacity: 0.45;
-}
-.renown-slot.occupied {
-  border-style: solid;
-  border-color: var(--border-active);
-  background: #141418;
-  animation: socket-snap 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.renown-notch-pips {
-  position: absolute;
-  bottom: 5px;
-  left: 6px;
-  display: flex;
-  gap: 3px;
-}
-.renown-notch-pip {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--accent-gold);
-  box-shadow: 0 0 4px rgba(245, 158, 11, 0.6);
-}
-.renown-slot.drag-target-hover {
-  border-color: var(--accent-gold) !important;
-  border-style: dashed !important;
-  background: #252216 !important;
-  transform: scale(1.08) !important;
-  box-shadow: 0 0 20px rgba(224, 180, 48, 0.4) !important;
+.cr-empty-key-sub {
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-weight: 600;
 }
 
-.renown-slot img {
-  width: 32px;
-  height: 32px;
-  image-rendering: pixelated;
-  pointer-events: none;
-}
-.renown-slot .slot-cost {
-  position: absolute;
-  bottom: 4px;
-  right: 6px;
+.cr-empty-passive {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--text-muted);
   font-size: 11px;
+  font-weight: 600;
+}
+.cr-empty-num {
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
 }
-.renown-slot .slot-rank {
-  position: absolute;
-  top: 4px;
-  left: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--accent-gold);
+.cr-empty-sub {
+  font-size: 10px;
+  color: var(--text-muted);
 }
 
-/* Floating Socket Context Popover */
-.renown-socket-popover {
-  position: absolute;
-  z-index: 500;
-  background: var(--bg-surface);
-  border: 1px solid var(--accent-gold);
+/* Inline Selected Belt Card Action Tray */
+.cr-belt-selected-bar {
+  background: var(--tier-0-recessed);
+  border: 1px solid rgba(245, 158, 11, 0.4);
   border-radius: 12px;
-  padding: 12px;
+  padding: 10px 12px;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7);
-  width: 220px;
-}
-
-/* Workspace */
-.renown-workspace {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
-  gap: 20px;
-}
-@media (max-width: 1024px) {
-  .renown-workspace { grid-template-columns: 1fr; }
-}
-
-.renown-library-panel {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: 14px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.renown-marks-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  max-height: 720px;
-  overflow-y: auto;
-  padding-right: 4px;
+  flex-wrap: wrap;
+  animation: tray-pop 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
-.renown-marks-grid::-webkit-scrollbar { width: 6px; }
-.renown-marks-grid::-webkit-scrollbar-thumb { background: var(--bg-elevated); border-radius: 4px; }
 
-.renown-mark-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  padding: 12px;
+.cr-selected-meta {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 10px;
-  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
-  position: relative;
-  cursor: grab;
-  user-select: none;
+  flex: 1;
+  min-width: 200px;
 }
-.renown-mark-card:hover {
-  border-color: var(--border-active);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-}
-.renown-mark-card:active { cursor: grabbing; }
-.renown-mark-card.is-dragging { opacity: 0.45; transform: scale(0.96); }
-.renown-mark-card.equipped-in-belt { border-color: var(--accent-gold); background: #141419; }
-.renown-mark-card.unowned-locked { opacity: 0.42; filter: grayscale(0.6); cursor: not-allowed; }
 
-.renown-card-icon {
-  width: 36px;
-  height: 36px;
-  image-rendering: pixelated;
-  background: #111216;
-  border-radius: 8px;
-  padding: 2px;
-  border: 1px solid var(--border-subtle);
-  flex-shrink: 0;
-  pointer-events: none;
+.cr-selected-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.cr-selected-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+.cr-selected-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .renown-rank-selector {
-  display: flex;
+  display: inline-flex;
   gap: 2px;
-  background: var(--bg-surface);
-  border-radius: 6px;
+  background: var(--tier-2-structural);
+  border-radius: 8px;
   padding: 2px;
   border: 1px solid var(--border-subtle);
 }
+
 .renown-rank-btn {
   appearance: none;
   border: none;
   background: transparent;
   color: var(--text-muted);
-  font-family: var(--font-sans);
   font-size: 11px;
   font-weight: 700;
-  padding: 3px 7px;
-  border-radius: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 120ms ease;
 }
-.renown-rank-btn:hover { color: var(--text-primary); }
 .renown-rank-btn.active {
-  background: var(--bg-elevated);
+  background: var(--tier-4-elevated);
   color: var(--accent-gold);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
 }
 
-.renown-inspector-panel {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: 14px;
-  padding: 18px;
+/* Deck Footer Elixir/Notch Bar */
+.cr-deck-footer {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-divider);
 }
 
-/* Pills */
-.renown-pill {
-  padding: 2px 7px;
-  border-radius: 4px;
-  font-weight: 600;
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
+.cr-notch-meter-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cr-meter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+}
+
+.cr-notch-segments {
   display: inline-flex;
   align-items: center;
   gap: 4px;
 }
-.renown-pill-cost { background: #2A2A32; color: #E4E4E7; }
-.renown-pill-discount { background: #3B2A10; color: var(--accent-gold); border: 1px solid rgba(245, 158, 11, 0.4); }
-.renown-pill-common { background: rgba(160, 165, 175, 0.15); color: #A0A5AF; }
-.renown-pill-uncommon { background: rgba(75, 195, 105, 0.15); color: #4BC369; }
-.renown-pill-rare { background: rgba(70, 150, 230, 0.15); color: #4696E6; }
-.renown-pill-epic { background: rgba(190, 95, 235, 0.15); color: #BE5FEB; }
-.renown-pill-mythic { background: rgba(250, 205, 70, 0.15); color: #FACD46; }
-.renown-pill-keystone { background: rgba(245, 158, 11, 0.2); color: var(--accent-gold); border: 1px solid rgba(245, 158, 11, 0.4); }
-.renown-pill-active { background: #4C1D95; color: #DDD6FE; }
-.renown-pill-locked { background: #26262B; color: #A1A1AA; }
 
-.renown-card-desc {
-  font-size: 11px;
+.cr-notch-seg {
+  width: 16px;
+  height: 7px;
+  border-radius: 4px;
+  background: var(--tier-0-recessed);
+  border: 1px solid var(--border-subtle);
+  transition: background-color 200ms ease, transform 200ms ease;
+}
+.cr-notch-seg.is-filled {
+  background: var(--accent-gold);
+  border-color: var(--accent-gold);
+}
+.cr-notch-seg.is-purist-seg {
+  border-color: rgba(245, 158, 11, 0.55);
+}
+
+.cr-live-stats-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
   color: var(--text-secondary);
-  line-height: 1.45;
-  flex: 1;
+  font-weight: 500;
 }
-.renown-rank-active-text {
-  color: var(--text-primary);
-  font-weight: 700;
+
+/* Sticky Mini-Deck Dock on Scroll */
+.cr-sticky-mini-deck {
+  position: fixed;
+  top: calc(8px + var(--safe-top));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(94vw, 760px);
+  z-index: 90;
+  background: rgba(18, 18, 21, 0.9);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: var(--shadow-hud);
+  border-radius: 14px;
+  padding: 7px 10px;
+  animation: tray-pop 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
-.renown-card-footer {
+
+.cr-mini-deck-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border-subtle);
+  gap: 10px;
 }
 
-/* Modals & Drawer */
-.renown-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(9, 9, 11, 0.8);
-  backdrop-filter: blur(6px);
-  z-index: 1100;
+.cr-mini-slots {
   display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.cr-mini-slots::-webkit-scrollbar {
+  display: none;
+}
+
+.cr-mini-slot {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--tier-0-recessed);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.cr-mini-slot.is-key {
+  border-color: rgba(245, 158, 11, 0.65);
+}
+.cr-mini-slot.is-drag-hover {
+  border-color: var(--accent-gold);
+  transform: scale(1.1);
+}
+.cr-mini-slot img {
+  width: 22px;
+  height: 22px;
+  image-rendering: pixelated;
+}
+
+.cr-mini-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.cr-mini-notches {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-gold);
+}
+
+/* Collection Section & Collectible Portrait Cards */
+.cr-collection-section {
+  background: var(--tier-2-structural);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--specular-rim);
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cr-collection-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cr-domain-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.cr-domain-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.cr-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cr-search-box {
+  position: relative;
+  width: 200px;
+  max-width: 100%;
+}
+.cr-search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.cr-search-input {
+  width: 100%;
+  background: var(--tier-0-recessed);
+  border: 1px solid var(--border-subtle);
+  border-radius: 9px;
+  padding: 6px 28px 6px 30px;
+  font-size: 12px;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  outline: none;
+}
+.cr-search-input:focus {
+  border-color: rgba(245, 158, 11, 0.55);
+}
+.cr-search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  display: flex;
+}
+
+/* Clash Royale Collectible Card Grid (7 desktop -> 5 tablet -> 4 mobile) */
+.cr-collection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(134px, 1fr));
+  gap: 12px;
+}
+
+.cr-card-wrapper {
+  position: relative;
+  min-width: 0;
+}
+.cr-card-wrapper.is-expanded {
+  z-index: 40;
+}
+
+.cr-collectible-card {
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 3 / 3.7;
+  background: var(--tier-3-floating);
+  border: 1.5px solid rgba(255, 255, 255, 0.09);
+  border-bottom-width: 3px;
+  box-shadow: var(--specular-rim), 0 4px 12px rgba(0, 0, 0, 0.28);
+  border-radius: 13px;
+  padding: 8px 8px 9px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  touch-action: pan-y;
+  transition: transform 170ms cubic-bezier(0.16, 1, 0.3, 1), border-color 160ms ease, box-shadow 170ms ease, opacity 160ms ease;
+}
+
+.cr-collectible-card:hover:not(.is-unowned) {
+  transform: translateY(-4px);
+  box-shadow: var(--specular-rim-strong), 0 10px 22px rgba(0, 0, 0, 0.45);
+}
+.cr-collectible-card:active:not(.is-unowned) {
+  transform: scale(0.95);
+}
+
+.cr-collectible-card.is-selected {
+  transform: translateY(-5px) scale(1.02);
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.35), 0 14px 28px rgba(0, 0, 0, 0.6);
+}
+
+.cr-collectible-card.is-in-deck {
+  background: #171613;
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+.cr-collectible-card.is-unowned {
+  opacity: 0.42;
+  filter: grayscale(0.65);
+}
+
+/* Rarity Pedestal Bottom Rim */
+.rarity-common { border-bottom-color: #71717A; }
+.rarity-uncommon { border-bottom-color: #10B981; }
+.rarity-rare { border-bottom-color: #3B82F6; }
+.rarity-epic { border-bottom-color: #A855F7; }
+.rarity-mythic { border-bottom-color: #F59E0B; }
+
+/* Notch Cost Gem */
+.cr-cost-gem {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  min-width: 24px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: var(--tier-0-recessed);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+.cr-cost-gem.is-keystone-gem,
+.cr-cost-gem.is-discounted-gem {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.6);
+  color: var(--accent-gold);
+}
+
+.cr-corner-icon {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  color: var(--text-secondary);
+  display: inline-flex;
+}
+.cr-corner-icon.is-gold {
+  color: var(--accent-gold);
+}
+
+.cr-equipped-check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: var(--accent-gold);
+  color: #09090B;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
-.renown-modal-dialog {
-  background: var(--bg-surface);
+.cr-card-art-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 14px;
+}
+
+.cr-card-sprite {
+  width: 48px;
+  height: 48px;
+  image-rendering: pixelated;
+  pointer-events: none;
+  filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.55));
+}
+
+.cr-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+}
+
+.cr-card-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 28px;
+}
+
+.cr-card-level-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding-top: 2px;
+}
+
+.cr-card-domain {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.cr-rank-pips {
+  display: inline-flex;
+  gap: 3px;
+}
+.cr-rank-pip {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+}
+.cr-rank-pip.is-lit {
+  background: var(--accent-gold);
+}
+
+/* Clash Royale Floating Action Tray under Selected Card */
+.cr-card-action-tray {
+  position: absolute;
+  left: -4px;
+  right: -4px;
+  top: calc(100% + 6px);
+  background: var(--tier-4-elevated);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  box-shadow: var(--shadow-hud);
+  border-radius: 12px;
+  padding: 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 45;
+  animation: tray-pop 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cr-tray-rank-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  background: var(--tier-0-recessed);
+  padding: 2px;
+  border-radius: 7px;
+}
+
+.cr-tray-rank-btn {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 3px 0;
+  border-radius: 5px;
+  color: var(--text-secondary);
+}
+.cr-tray-rank-btn.active {
+  background: var(--tier-3-floating);
+  color: var(--accent-gold);
+}
+
+.cr-tray-buttons {
+  display: flex;
+  gap: 5px;
+}
+
+.cr-tray-use-btn {
+  flex: 1;
+  background: var(--accent-gold);
+  color: #09090B;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 8px;
+  border-radius: 8px;
+  transition: transform 120ms ease;
+}
+.cr-tray-use-btn:active {
+  transform: scale(0.95);
+}
+.cr-tray-use-btn.is-remove {
+  background: rgba(239, 68, 68, 0.2);
+  color: #FCA5A5;
+  border: 1px solid rgba(239, 68, 68, 0.45);
+}
+.cr-tray-use-btn.is-disabled {
+  background: var(--tier-2-structural);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.cr-tray-info-btn {
+  width: 30px;
+  border-radius: 8px;
+  background: var(--tier-2-structural);
   border: 1px solid var(--border-subtle);
-  border-radius: 14px;
-  width: 540px;
-  max-width: 92vw;
-  padding: 22px;
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Floating Drag Ghost Card */
+.cr-drag-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 84px;
+  height: 106px;
+  background: var(--tier-4-elevated);
+  border: 2px solid var(--accent-gold);
+  border-radius: 12px;
+  box-shadow: 0 22px 44px rgba(0, 0, 0, 0.75);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 6px 6px;
+  pointer-events: none;
+  z-index: 1500;
+  will-change: transform;
+}
+.cr-drag-ghost.is-dropping-remove {
+  border-color: var(--accent-warning);
+}
+.cr-drag-ghost img {
+  width: 42px;
+  height: 42px;
+  image-rendering: pixelated;
+}
+.cr-ghost-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+/* Toast */
+.cr-toast {
+  position: fixed;
+  bottom: calc(24px + var(--safe-bottom));
+  right: 20px;
+  background: rgba(26, 26, 31, 0.96);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  color: var(--text-primary);
+  padding: 10px 15px;
+  border-radius: 11px;
+  box-shadow: var(--shadow-hud);
+  z-index: 1300;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  animation: tray-pop 180ms ease;
+}
+
+/* Modals & Mobile Bottom Sheets */
+.renown-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(9, 9, 11, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.cr-detail-sheet {
+  background: var(--tier-2-structural);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-hud);
+  border-radius: 18px;
+  width: 480px;
+  max-width: 100%;
+  max-height: 88dvh;
+  overflow-y: auto;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  animation: tray-pop 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.renown-drawer-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 640px;
-  max-width: 95vw;
-  background: #121215;
-  border-left: 1px solid var(--border-subtle);
+.cr-picker-sheet {
+  width: 620px;
+}
+
+.cr-sheet-grabber {
+  display: none;
+  width: 38px;
+  height: 4px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: -6px auto 2px;
+}
+
+.cr-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.cr-detail-art {
+  width: 72px;
+  height: 78px;
+  border-radius: 14px;
+  background: var(--tier-3-floating);
+  border: 1.5px solid var(--border-subtle);
+  border-bottom-width: 3px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.cr-detail-art img {
+  width: 46px;
+  height: 46px;
+  image-rendering: pixelated;
+}
+
+.cr-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: var(--tier-3-floating);
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cr-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
+  gap: 10px;
+  max-height: 52dvh;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+/* Inspector & Presets */
+.cr-inspector-content {
   display: flex;
   flex-direction: column;
-  z-index: 1001;
-  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.7);
+  gap: 20px;
 }
 
-@keyframes keystone-epic-pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25), 0 0 14px rgba(245, 158, 11, 0.25), inset 0 0 12px rgba(245, 158, 11, 0.15);
-  }
-  50% {
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.45), 0 0 26px rgba(245, 158, 11, 0.5), inset 0 0 20px rgba(245, 158, 11, 0.3);
-  }
+.cr-section-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-@keyframes keystone-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-2px); }
+.cr-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-@keyframes keystone-halo-spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+.cr-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
-@keyframes socket-snap {
-  0% { transform: scale(0.88); }
-  70% { transform: scale(1.06); }
+.cr-section-sub {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent-gold);
+}
+
+.cr-preset-row {
+  width: 100%;
+  cursor: pointer;
+  transition: background-color 140ms ease;
+}
+.cr-preset-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+.cr-preset-cap {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--tier-3-floating);
+  color: var(--accent-gold);
+}
+
+.cr-sync-actions-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Mobile-only Navigation & Panes */
+.cr-mobile-bottom-nav,
+.cr-mobile-only-pane {
+  display: none;
+}
+
+@keyframes cr-wiggle {
+  0%, 100% { transform: rotate(-1.8deg) scale(1.02); }
+  50% { transform: rotate(1.8deg) scale(1.02); }
+}
+
+@keyframes card-equip-pop {
+  0% { transform: scale(0.84); }
+  60% { transform: scale(1.08); }
   100% { transform: scale(1); }
 }
 
-/* Mobile Responsiveness & Ergonomics */
-@media (max-width: 768px) {
-  .renown-container {
-    padding: 16px 12px 64px;
-    gap: 16px;
+@keyframes tray-pop {
+  0% { opacity: 0; transform: translateY(5px) scale(0.97); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Tablet & Mobile Native Clash Royale Layout */
+@media (max-width: 860px) {
+  .cr-deck-desktop-row {
+    display: none;
   }
-  .renown-top-header {
-    padding: 12px 14px;
-    gap: 12px;
-  }
-  .renown-brand-group {
-    width: 100%;
-    justify-content: space-between;
-  }
-  .renown-brand-title {
-    font-size: 1.05rem;
-  }
-  .renown-btn {
-    padding: 6px 10px;
-    font-size: 11px;
-  }
-  .renown-belt-chassis {
-    padding: 14px 12px;
-  }
-  .renown-chassis-header {
+
+  .cr-deck-mobile-layout {
+    display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+    gap: 10px;
   }
-  .renown-slots-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
+
+  .cr-mobile-keystone-bar {
+    background: #17140D;
+    border: 1.5px solid rgba(245, 158, 11, 0.6);
+    border-radius: 13px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    cursor: pointer;
   }
-  .renown-slot {
-    min-height: 58px;
+  .cr-mobile-keystone-bar.is-selected {
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.35);
   }
-  .renown-slot img {
-    width: 28px;
-    height: 28px;
+
+  .cr-mobile-key-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
   }
-  .renown-slot.keystone-anchor img.keystone-occupied-img {
-    width: 34px !important;
-    height: 34px !important;
+
+  .cr-mobile-key-emblem {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: var(--tier-0-recessed);
+    border: 1px solid rgba(245, 158, 11, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
   }
-  .renown-library-panel {
-    padding: 14px;
+  .cr-mobile-key-emblem img {
+    width: 32px;
+    height: 32px;
+    image-rendering: pixelated;
   }
-  .renown-marks-grid {
-    grid-template-columns: 1fr;
-    max-height: 580px;
+
+  .cr-mobile-key-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
-  .renown-drawer-panel {
-    width: 100vw;
-    max-width: 100vw;
+  .cr-mobile-key-sub {
+    font-size: 11px;
+    color: var(--text-secondary);
   }
-  .renown-modal-card {
-    width: 95vw;
-    max-width: 95vw;
-    padding: 14px;
+
+  .cr-mobile-key-pill {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent-gold);
+    background: rgba(245, 158, 11, 0.16);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    padding: 4px 8px;
+    border-radius: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Clash Royale 4x2 Battle Deck Grid */
+  .cr-mobile-4x2-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 7px;
   }
 }
 
-@media (max-width: 480px) {
-  .renown-slots-grid {
-    grid-template-columns: repeat(3, 1fr);
+@media (max-width: 768px) {
+  .cr-app-shell {
+    padding: 8px 10px calc(76px + var(--safe-bottom));
+    gap: 10px;
+  }
+
+  .hide-mobile {
+    display: none;
+  }
+
+  .hide-on-mobile {
+    display: none;
+  }
+
+  .cr-mobile-only-pane {
+    display: block;
+    background: var(--tier-2-structural);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 16px 14px;
+  }
+
+  .cr-top-header {
+    padding: 8px 11px;
+    flex-wrap: nowrap;
+  }
+
+  .cr-brand-logo {
+    width: 28px;
+    height: 28px;
+  }
+
+  .cr-brand-title {
+    font-size: 15px;
+    white-space: nowrap;
+  }
+
+  .cr-brand-sub {
+    display: none;
+  }
+
+  .cr-header-actions {
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+
+  .cr-battle-deck-stage,
+  .cr-collection-section {
+    padding: 10px;
+    border-radius: 14px;
+    gap: 9px;
+  }
+
+  .cr-deck-label {
+    display: none;
+  }
+
+  .cr-deck-topbar {
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+
+  .cr-deck-tabs-group {
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+
+  .renown-slot-tab {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  .cr-mobile-keystone-bar {
+    padding: 7px 10px;
+    border-radius: 11px;
+  }
+
+  .cr-mobile-key-emblem {
+    width: 34px;
+    height: 34px;
+  }
+  .cr-mobile-key-emblem img {
+    width: 26px;
+    height: 26px;
+  }
+
+  .cr-mobile-key-title {
+    font-size: 12px;
+  }
+  .cr-mobile-key-sub {
+    font-size: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cr-mobile-4x2-grid .cr-deck-slot {
+    aspect-ratio: 1 / 1.06;
+    padding: 20px 4px 4px;
+    border-radius: 10px;
+  }
+
+  .cr-deck-footer {
+    padding-top: 7px;
+    gap: 6px;
+  }
+
+  .cr-notch-segments,
+  .cr-live-stats-strip {
+    display: none;
+  }
+
+  /* 4 Collectible Cards per Row on Mobile - True Clash Royale Density */
+  .cr-collection-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .cr-collectible-card {
+    aspect-ratio: 3 / 3.55;
+    padding: 6px 5px 6px;
+    border-radius: 11px;
+  }
+
+  .cr-card-sprite,
+  .cr-slot-sprite {
+    width: 32px;
+    height: 32px;
+  }
+
+  .cr-card-title {
+    font-size: 10.5px;
+    min-height: 25px;
+  }
+
+  .cr-card-domain {
+    display: none;
+  }
+
+  .cr-card-level-row {
+    justify-content: center;
+  }
+
+  .cr-card-action-tray {
+    left: -2px;
+    right: -2px;
+    padding: 5px;
     gap: 5px;
   }
-  .renown-slot {
-    min-height: 54px;
+
+  .cr-tray-buttons {
+    flex-direction: column;
+    gap: 4px;
   }
-  .keystone-empty-title {
-    font-size: 10px;
+
+  .cr-tray-info-btn {
+    width: 100%;
+    height: 26px;
   }
-  .keystone-empty-sub {
-    font-size: 10px;
+
+  .cr-search-box {
+    width: 100%;
+  }
+
+  .cr-toolbar-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* Bottom Sheet Presentation for Modals on Mobile */
+  .renown-modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .cr-detail-sheet {
+    width: 100vw;
+    border-radius: 20px 20px 0 0;
+    padding: 16px 16px calc(20px + var(--safe-bottom));
+    max-height: 86dvh;
+  }
+
+  .cr-sheet-grabber {
+    display: block;
+  }
+
+  .cr-picker-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .cr-toast {
+    bottom: calc(74px + var(--safe-bottom));
+    left: 12px;
+    right: 12px;
+    justify-content: center;
+  }
+
+  /* Native Mobile Bottom Navigation Bar */
+  .cr-mobile-bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 95;
+    background: rgba(18, 18, 21, 0.94);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border-subtle);
+    padding: 6px 12px calc(8px + var(--safe-bottom));
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .cr-mobile-nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 4px;
+    border-radius: 10px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    transition: color 150ms ease, background-color 150ms ease;
+  }
+  .cr-mobile-nav-btn.active {
+    color: var(--accent-gold);
+    background: rgba(245, 158, 11, 0.1);
+  }
+}
+
+@media (max-width: 440px) {
+  .hide-xs {
+    display: none;
   }
 }

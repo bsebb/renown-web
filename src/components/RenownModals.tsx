@@ -1,9 +1,174 @@
 import React, { useState } from "react";
-import { X, Search, Sparkles } from "lucide-react";
+import { X, Search, Crown, Zap, Sparkles } from "lucide-react";
 import { ALL_MARKS, MarkItem } from "../data/renownData";
-import { EquippedSlot } from "./RenownBelt";
-import { BeltCapacityTier, KEYSTONE_SLOT_INDEX, checkMarkEligibility } from "./deckValidation";
+import {
+  BeltCapacityTier,
+  EquippedSlot,
+  KEYSTONE_SLOT_INDEX,
+  checkMarkEligibility,
+  findValidSwapSlots
+} from "./deckValidation";
 import { SlidingSegmented } from "./SlidingSegmented";
+
+interface CardDetailSheetProps {
+  markId: number | null;
+  onClose: () => void;
+  currentBelt: (EquippedSlot | null)[];
+  viewMode: "all" | "owned";
+  ownedMarks: Record<number, number>;
+  beltCapacity: BeltCapacityTier;
+  getRankForMark: (markId: number) => number;
+  getEffectiveCost: (mark: MarkItem, rank: number) => number;
+  onSetCardRank: (markId: number, rank: number) => void;
+  onUseCard: (mark: MarkItem, rank: number) => void;
+}
+
+export const CardDetailSheet: React.FC<CardDetailSheetProps> = ({
+  markId,
+  onClose,
+  currentBelt,
+  viewMode,
+  ownedMarks,
+  beltCapacity,
+  getRankForMark,
+  getEffectiveCost,
+  onSetCardRank,
+  onUseCard
+}) => {
+  if (markId === null) return null;
+  const mark = ALL_MARKS.find((m) => m.id === markId);
+  if (!mark) return null;
+
+  const rank = getRankForMark(mark.id);
+  const effCost = getEffectiveCost(mark, rank);
+  const isEquipped = currentBelt.some((s) => s?.markId === mark.id);
+  const isOwned = viewMode !== "owned" || Boolean(ownedMarks[mark.id]);
+  const direct = checkMarkEligibility(
+    currentBelt,
+    mark,
+    rank,
+    undefined,
+    viewMode,
+    ownedMarks,
+    beltCapacity
+  );
+  const canSwap =
+    !isEquipped &&
+    !direct.eligible &&
+    isOwned &&
+    findValidSwapSlots(currentBelt, mark, rank, viewMode, ownedMarks, beltCapacity).length > 0;
+
+  const parts = mark.desc.split(" | ").map((p) => p.trim());
+
+  const ctaLabel = isEquipped
+    ? "Remove from Battle Deck"
+    : direct.eligible
+    ? mark.keystone
+      ? "Socket Keystone (0N)"
+      : `Use in Deck (${effCost}N)`
+    : canSwap
+    ? `Select Slot to Swap (${mark.keystone ? "0N" : `${effCost}N`})`
+    : direct.actionLabel;
+
+  return (
+    <div className="renown-modal-backdrop" onClick={onClose}>
+      <div
+        className="cr-detail-sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label={mark.name}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="cr-sheet-grabber" aria-hidden="true" />
+
+        <div className="cr-detail-header">
+          <div className={`cr-detail-art rarity-${mark.tier.toLowerCase()}`}>
+            <img
+              src={`assets/marks/mark_${String(mark.id).padStart(2, "0")}.png`}
+              alt={mark.name}
+              draggable={false}
+            />
+            <span className={`cr-cost-gem ${mark.keystone ? "is-keystone-gem" : ""}`}>
+              {mark.keystone ? "0N" : `${effCost}N`}
+            </span>
+          </div>
+
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+              <h3 style={{ fontSize: "17px", fontWeight: 700, color: "var(--text-primary)" }}>
+                {mark.name}
+              </h3>
+              {mark.keystone && <Crown size={15} color="var(--accent-gold)" />}
+              {mark.active && <Zap size={15} color="var(--accent-gold)" />}
+            </div>
+            <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "2px" }}>
+              {mark.tier} · {mark.domain} · {mark.keystone ? "Zero-Notch Keystone" : `${effCost} Notch${effCost === 1 ? "" : "es"}`}
+            </div>
+            <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>
+              Unlock: {mark.advancement}
+            </div>
+          </div>
+
+          <button type="button" className="cr-close-btn" onClick={onClose} aria-label="Close card info">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
+          <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)" }}>
+            Preview Mastery Rank
+          </span>
+          <SlidingSegmented
+            options={[
+              { id: 1, label: "Rank I" },
+              { id: 2, label: "Rank II" },
+              { id: 3, label: mark.cost >= 3 && !mark.keystone ? "Rank III (-1N)" : "Rank III" }
+            ]}
+            value={rank}
+            onChange={(val) => onSetCardRank(mark.id, val)}
+          />
+        </div>
+
+        <div className="ios-grouped-card">
+          {parts.map((line, idx) => {
+            const isSelectedRank =
+              (rank === 1 && line.startsWith("R1:")) ||
+              (rank === 2 && line.startsWith("R2:")) ||
+              (rank === 3 && line.startsWith("R3:"));
+            return (
+              <div
+                key={idx}
+                className="ios-hairline-row"
+                style={{
+                  fontSize: "12px",
+                  lineHeight: 1.45,
+                  color: isSelectedRank ? "var(--text-primary)" : "var(--text-secondary)",
+                  fontWeight: isSelectedRank ? 600 : 400,
+                  background: isSelectedRank ? "rgba(245, 158, 11, 0.08)" : "transparent"
+                }}
+              >
+                {line}
+              </div>
+            );
+          })}
+        </div>
+
+        <button
+          type="button"
+          className={`renown-btn ${isEquipped ? "cr-btn-danger" : "renown-btn-gold"}`}
+          style={{ width: "100%", justifyContent: "center", padding: "11px 16px", fontSize: "13px" }}
+          disabled={!isOwned && !isEquipped}
+          onClick={() => {
+            onUseCard(mark, rank);
+            onClose();
+          }}
+        >
+          <span>{ctaLabel}</span>
+        </button>
+      </div>
+    </div>
+  );
+};
 
 interface QuickPickerModalProps {
   slotIdx: number | null;
@@ -11,8 +176,8 @@ interface QuickPickerModalProps {
   onSelectMark: (markId: number, slotIdx: number, preferredRank: number) => void;
   viewMode: "all" | "owned";
   ownedMarks: Record<number, number>;
-  markRanks: Record<number, number>;
   currentBelt: (EquippedSlot | null)[];
+  getRankForMark: (markId: number) => number;
   getEffectiveCost: (mark: MarkItem, rank: number) => number;
   remainingNotches: number;
   beltCapacity: BeltCapacityTier;
@@ -24,8 +189,8 @@ export const QuickPickerModal: React.FC<QuickPickerModalProps> = ({
   onSelectMark,
   viewMode,
   ownedMarks,
-  markRanks,
   currentBelt,
+  getRankForMark,
   getEffectiveCost,
   remainingNotches,
   beltCapacity
@@ -34,21 +199,13 @@ export const QuickPickerModal: React.FC<QuickPickerModalProps> = ({
   const [modalDomain, setModalDomain] = useState<string>("ALL");
 
   if (slotIdx === null) return null;
-
   const isKeystoneSlot = slotIdx === KEYSTONE_SLOT_INDEX;
 
   const marksToDisplay = ALL_MARKS.filter((m) => {
-    // 1. Role separation: Keystone slot ONLY accepts Keystones; Passive slots reject Keystones
     if (isKeystoneSlot && !m.keystone) return false;
     if (!isKeystoneSlot && m.keystone) return false;
-
-    // 2. Collection filter
     if (viewMode === "owned" && !ownedMarks[m.id]) return false;
-
-    // 3. Domain filter (for passive slots)
     if (!isKeystoneSlot && modalDomain !== "ALL" && m.domain !== modalDomain) return false;
-
-    // 4. Search query
     const q = search.toLowerCase().trim();
     return (
       !q ||
@@ -60,186 +217,110 @@ export const QuickPickerModal: React.FC<QuickPickerModalProps> = ({
 
   return (
     <div className="renown-modal-backdrop" onClick={onClose}>
-      <div className="renown-modal-dialog" onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+      <div className="cr-detail-sheet cr-picker-sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="cr-sheet-grabber" aria-hidden="true" />
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px" }}>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              {isKeystoneSlot && <Sparkles size={16} color="var(--accent-gold)" />}
-              <h3 style={{ fontSize: "14px", fontWeight: 700, color: "#FFFFFF" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              {isKeystoneSlot && <Sparkles size={15} color="var(--accent-gold)" />}
+              <h3 style={{ fontSize: "16px", fontWeight: 700, color: "var(--text-primary)" }}>
                 {isKeystoneSlot
-                  ? "Select Zero-Notch Keystone (Center Anchor)"
-                  : `Select Passive Mark for Slot ${slotIdx + 1}`}
+                  ? "Select Zero-Notch Keystone"
+                  : `Select Card for Slot ${slotIdx < KEYSTONE_SLOT_INDEX ? slotIdx + 1 : slotIdx}`}
               </h3>
             </div>
-            <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "2px" }}>
+            <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "2px" }}>
               {isKeystoneSlot
-                ? "12 Domain-Balanced Keystones (3 per domain, 0 Notches). Leaving Slot 5 empty grants +1 Purist Notch."
-                : `${remainingNotches} Passive Notches available. Max 4 Offense Notches.`}
+                ? "12 Keystones (3 per domain, 0N). Leaving Slot 5 empty grants +1N Purist."
+                : `${remainingNotches} Passive Notches free · Max 4 Offense Notches`}
             </div>
           </div>
-          <button type="button" onClick={onClose} style={{ color: "var(--text-muted)" }} aria-label="Close modal">
-            <X size={16} />
+          <button type="button" className="cr-close-btn" onClick={onClose} aria-label="Close picker">
+            <X size={18} />
           </button>
         </div>
 
-        {/* Domain Filters for Passive Slots */}
         {!isKeystoneSlot && (
-          <SlidingSegmented
-            options={[
-              { id: "ALL", label: "All" },
-              { id: "Offense", label: "Offense" },
-              { id: "Defense", label: "Defense" },
-              { id: "Mobility", label: "Mobility" },
-              { id: "Utility", label: "Utility" }
-            ]}
-            value={modalDomain}
-            onChange={(val) => setModalDomain(val as string)}
-          />
+          <div className="cr-domain-scroll">
+            <SlidingSegmented
+              options={[
+                { id: "ALL", label: "All" },
+                { id: "Offense", label: "Offense" },
+                { id: "Defense", label: "Defense" },
+                { id: "Mobility", label: "Mobility" },
+                { id: "Utility", label: "Utility" }
+              ]}
+              value={modalDomain}
+              onChange={setModalDomain}
+            />
+          </div>
         )}
 
-        <div style={{ position: "relative" }}>
-          <Search
-            size={14}
-            style={{
-              position: "absolute",
-              left: "10px",
-              top: "50%",
-              transform: "translateY(-50%)",
-              color: "var(--text-muted)"
-            }}
-          />
+        <div className="cr-search-box" style={{ width: "100%" }}>
+          <Search size={14} className="cr-search-icon" />
           <input
             type="text"
-            placeholder={isKeystoneSlot ? "Search Keystone marks..." : "Search passives, perks, advancements..."}
+            placeholder={isKeystoneSlot ? "Search 12 Keystones..." : "Search passive marks..."}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{
-              width: "100%",
-              background: "var(--bg-card)",
-              border: "1px solid var(--border-subtle)",
-              borderRadius: "8px",
-              padding: "7px 10px 7px 32px",
-              fontSize: "12px",
-              color: "var(--text-primary)",
-              outline: "none"
-            }}
+            className="cr-search-input"
           />
         </div>
 
-        {/* List of eligible marks */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-            maxHeight: "360px",
-            overflowY: "auto",
-            paddingRight: "4px"
-          }}
-        >
-          {marksToDisplay.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "24px 0", color: "var(--text-muted)", fontSize: "12px" }}>
-              No compatible marks found matching filter.
-            </div>
-          ) : (
-            marksToDisplay.map((m) => {
-              const preferredRank = viewMode === "owned" ? ownedMarks[m.id] || 1 : markRanks[m.id] || 1;
-              const effCost = getEffectiveCost(m, preferredRank);
-              const eligibility = checkMarkEligibility(
-                currentBelt,
-                m,
-                preferredRank,
-                slotIdx,
-                viewMode,
-                ownedMarks,
-                beltCapacity
-              );
+        <div className="cr-picker-grid">
+          {marksToDisplay.map((m) => {
+            const rank = getRankForMark(m.id);
+            const cost = getEffectiveCost(m, rank);
+            const check = checkMarkEligibility(
+              currentBelt,
+              m,
+              rank,
+              slotIdx,
+              viewMode,
+              ownedMarks,
+              beltCapacity
+            );
+            const isEquippedHere = currentBelt[slotIdx]?.markId === m.id;
+            const isEquippedElsewhere = !isEquippedHere && currentBelt.some((s) => s?.markId === m.id);
+            const disabled = (!check.eligible && check.actionType === "disabled") || isEquippedElsewhere;
 
-              const isCurrentlyInSlot = currentBelt[slotIdx]?.markId === m.id;
-              const isEquippedElsewhere = currentBelt.some(
-                (s, sIdx) => s?.markId === m.id && sIdx !== slotIdx
-              );
-
-              return (
-                <div
-                  key={m.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "10px 12px",
-                    background: isCurrentlyInSlot ? "rgba(245, 158, 11, 0.08)" : "var(--bg-card)",
-                    borderRadius: "8px",
-                    border: `1px solid ${
-                      isCurrentlyInSlot
-                        ? "var(--accent-gold)"
-                        : eligibility.eligible
-                        ? "var(--border-subtle)"
-                        : "rgba(239, 68, 68, 0.2)"
-                    }`,
-                    opacity: eligibility.eligible ? 1 : 0.6,
-                    transition: "border-color 140ms ease, background 140ms ease"
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1, minWidth: 0, paddingRight: "8px" }}>
-                    <img
-                      src={`assets/marks/mark_${String(m.id).padStart(2, "0")}.png`}
-                      alt={m.name}
-                      style={{ width: "32px", height: "32px", imageRendering: "pixelated", flexShrink: 0 }}
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.opacity = "0.2";
-                      }}
-                    />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <span style={{ fontSize: "12px", fontWeight: 700, color: "#FFFFFF", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {m.name}
-                        </span>
-                        <span className="renown-pill renown-pill-cost">{effCost}N</span>
-                        <span className={`renown-pill renown-pill-${m.tier.toLowerCase()}`}>{m.tier}</span>
-                      </div>
-                      <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {m.desc.split(" | ")[0]}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Action button / Status badge */}
-                  <div>
-                    {isCurrentlyInSlot ? (
-                      <span className="renown-pill" style={{ background: "rgba(245, 158, 11, 0.15)", color: "var(--accent-gold)" }}>
-                        Equipped Here
-                      </span>
-                    ) : !eligibility.eligible ? (
-                      <span
-                        className="renown-pill"
-                        style={{
-                          background: "rgba(239, 68, 68, 0.15)",
-                          color: "#FCA5A5",
-                          border: "1px solid rgba(239, 68, 68, 0.3)"
-                        }}
-                        title={eligibility.reason}
-                      >
-                        {eligibility.actionLabel}
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        className="renown-btn renown-btn-gold"
-                        style={{ padding: "4px 10px", fontSize: "11px" }}
-                        onClick={() => {
-                          onSelectMark(m.id, slotIdx, preferredRank);
-                          onClose();
-                        }}
-                      >
-                        {isEquippedElsewhere ? "Move Here" : "Equip"}
-                      </button>
-                    )}
+            return (
+              <button
+                key={m.id}
+                type="button"
+                disabled={disabled}
+                className={`cr-collectible-card rarity-${m.tier.toLowerCase()} ${
+                  disabled ? "is-unowned" : ""
+                }`}
+                onClick={() => {
+                  if (!disabled) {
+                    onSelectMark(m.id, slotIdx, rank);
+                    onClose();
+                  }
+                }}
+              >
+                <span className={`cr-cost-gem ${m.keystone ? "is-keystone-gem" : ""}`}>
+                  {m.keystone ? "0N" : `${cost}N`}
+                </span>
+                <div className="cr-card-art-stage">
+                  <img
+                    src={`assets/marks/mark_${String(m.id).padStart(2, "0")}.png`}
+                    alt={m.name}
+                    className="cr-card-sprite"
+                    draggable={false}
+                  />
+                </div>
+                <div className="cr-card-meta">
+                  <div className="cr-card-title">{m.name}</div>
+                  <div className="cr-card-level-row">
+                    <span className="cr-card-domain">
+                      {disabled ? check.actionLabel : m.domain}
+                    </span>
                   </div>
                 </div>
-              );
-            })
-          )}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -261,58 +342,77 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   onQuickLoadStarter,
   onUnlockAll
 }) => {
-  const [importString, setImportString] = useState<string>("");
-
+  const [input, setInput] = useState<string>("");
   if (!isOpen) return null;
 
   return (
     <div className="renown-modal-backdrop" onClick={onClose}>
-      <div className="renown-modal-dialog" onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <h3 style={{ fontSize: "14px", fontWeight: 700, color: "#FFFFFF" }}>
-            Import Collection (/renown export)
+      <div className="cr-detail-sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="cr-sheet-grabber" aria-hidden="true" />
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h3 style={{ fontSize: "16px", fontWeight: 700, color: "var(--text-primary)" }}>
+            Import Owned Collection
           </h3>
-          <button type="button" onClick={onClose} style={{ color: "var(--text-muted)" }}>
-            <X size={16} />
+          <button type="button" className="cr-close-btn" onClick={onClose} aria-label="Close">
+            <X size={18} />
           </button>
         </div>
 
         <p style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.5 }}>
-          In Minecraft, run <code style={{ color: "var(--accent-gold)" }}>/renown export</code> to generate your
-          unlocked collection link, or paste the tokens string below:
+          Run <code style={{ color: "var(--accent-gold)" }}>/renown export</code> in-game and paste
+          your string below to filter cards by your unlocked Mastery ranks.
         </p>
 
         <textarea
-          rows={4}
-          placeholder="e.g. 1:2,2:1,4:1,5:3,13:2,22:1,43:1..."
-          value={importString}
-          onChange={(e) => setImportString(e.target.value)}
+          rows={3}
+          placeholder="Example: 1:2,3:2,14:2,30:1,45:1,52:1"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
           style={{
             width: "100%",
-            background: "var(--bg-card)",
+            background: "var(--tier-0-recessed)",
             border: "1px solid var(--border-subtle)",
-            borderRadius: "8px",
-            padding: "10px",
-            fontSize: "12px",
+            borderRadius: "10px",
+            padding: "10px 12px",
             color: "var(--text-primary)",
+            fontSize: "12px",
             fontFamily: "var(--font-mono)",
-            outline: "none"
+            outline: "none",
+            resize: "none"
           }}
         />
 
-        <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", flexWrap: "wrap" }}>
-          <button type="button" className="renown-btn" onClick={onQuickLoadStarter}>
-            Starter Set (15 Marks)
-          </button>
-
-          <button type="button" className="renown-btn" onClick={onUnlockAll}>
-            Unlock All 55
-          </button>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className="renown-btn"
+              onClick={() => {
+                onQuickLoadStarter();
+                onClose();
+              }}
+            >
+              Day 1 Starter
+            </button>
+            <button
+              type="button"
+              className="renown-btn"
+              onClick={() => {
+                onUnlockAll();
+                onClose();
+              }}
+            >
+              Unlock All 55 (R3)
+            </button>
+          </div>
 
           <button
             type="button"
             className="renown-btn renown-btn-gold"
-            onClick={() => onImport(importString)}
+            onClick={() => {
+              onImport(input);
+              onClose();
+            }}
           >
             Import
           </button>

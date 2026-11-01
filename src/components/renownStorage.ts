@@ -1,6 +1,13 @@
 import { ALL_MARKS } from "../data/renownData";
-import { EquippedSlot } from "./RenownBelt";
-import { BELT_TOTAL_SLOTS, BeltCapacityTier, KEYSTONE_SLOT_INDEX } from "./deckValidation";
+import {
+  BELT_TOTAL_SLOTS,
+  BeltCapacityTier,
+  DECK_PRESETS,
+  EquippedSlot,
+  KEYSTONE_SLOT_INDEX
+} from "./deckValidation";
+
+export const DECK_SLOT_IDS = [1, 2, 3, 4, 5] as const;
 
 export const STORAGE_KEY_BUILD_SLOTS = "renown_build_decks_v3";
 export const STORAGE_KEY_ACTIVE_DECK = "renown_active_deck_v3";
@@ -29,7 +36,6 @@ export function saveToStorage<T>(key: string, value: T): void {
 }
 
 export function getDefaultBuildSlots(): Record<number, (EquippedSlot | null)[]> {
-  // Default Deck 1: Symmetrical 9-Slot Belt (6N Day-1 legal starter + 0N Keystone in Center Slot 5)
   const defaultDeck1: (EquippedSlot | null)[] = new Array(BELT_TOTAL_SLOTS).fill(null);
   defaultDeck1[0] = { markId: 14, rank: 2 }; // Cover Me with Diamonds (2N Defense)
   defaultDeck1[1] = { markId: 16, rank: 1 }; // Return to Sender (2N Defense Active)
@@ -39,18 +45,23 @@ export function getDefaultBuildSlots(): Record<number, (EquippedSlot | null)[]> 
 
   return {
     1: defaultDeck1,
-    2: new Array(BELT_TOTAL_SLOTS).fill(null),
-    3: new Array(BELT_TOTAL_SLOTS).fill(null)
+    2: [...DECK_PRESETS[0].slots],
+    3: [...DECK_PRESETS[4].slots],
+    4: new Array(BELT_TOTAL_SLOTS).fill(null),
+    5: new Array(BELT_TOTAL_SLOTS).fill(null)
   };
 }
 
 export function getSanitizedBuildSlots(): Record<number, (EquippedSlot | null)[]> {
   const fallback = getDefaultBuildSlots();
-  const stored = loadFromStorage<Record<number, (EquippedSlot | null)[]>>(STORAGE_KEY_BUILD_SLOTS, fallback);
+  const stored = loadFromStorage<Record<number, (EquippedSlot | null)[]>>(
+    STORAGE_KEY_BUILD_SLOTS,
+    fallback
+  );
 
   if (stored && typeof stored === "object") {
     const sanitized: Record<number, (EquippedSlot | null)[]> = {};
-    [1, 2, 3].forEach((slot) => {
+    DECK_SLOT_IDS.forEach((slot) => {
       if (Array.isArray(stored[slot]) && stored[slot].length === BELT_TOTAL_SLOTS) {
         sanitized[slot] = stored[slot].map((item, idx) => {
           if (!item) return null;
@@ -61,7 +72,7 @@ export function getSanitizedBuildSlots(): Record<number, (EquippedSlot | null)[]
           return item;
         });
       } else {
-        sanitized[slot] = slot === 1 ? fallback[1] : new Array(BELT_TOTAL_SLOTS).fill(null);
+        sanitized[slot] = fallback[slot] ? [...fallback[slot]] : new Array(BELT_TOTAL_SLOTS).fill(null);
       }
     });
     return sanitized;
@@ -78,8 +89,10 @@ export function getSanitizedBeltCapacity(): BeltCapacityTier {
 export function getDefaultOwnedMarks(): Record<number, number> {
   const initial: Record<number, number> = {};
   for (let i = 1; i <= 24; i++) initial[i] = i % 3 === 0 ? 2 : 1;
+  initial[30] = 1;
+  initial[33] = 1;
+  initial[39] = 2;
   initial[45] = 1;
   initial[52] = 1;
-  initial[39] = 2;
   return initial;
 }
