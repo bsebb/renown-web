@@ -39,11 +39,15 @@ export const RenownView: React.FC = () => {
     toastMessage,
     dragOverSlot,
     setDragOverSlot,
+    draggingInfo,
+    handleDragEnd,
     getEffectiveCost,
     totalNotches,
+    remainingNotches,
     offenseNotches,
     equippedKeystone,
     equippedActive,
+    checkEligibility,
     equipMark,
     unequipSlot,
     setSlotRank,
@@ -192,12 +196,15 @@ export const RenownView: React.FC = () => {
         currentBelt={currentBelt}
         activeBuildSlot={activeBuildSlot}
         totalNotches={totalNotches}
+        remainingNotches={remainingNotches}
         offenseNotches={offenseNotches}
         hasKeystone={Boolean(equippedKeystone)}
         dragOverSlot={dragOverSlot}
+        draggingInfo={draggingInfo}
         setDragOverSlot={setDragOverSlot}
         onDragStartSocket={handleDragStartSocket}
         onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
         onDrop={handleDrop}
         onClear={clearCurrentBelt}
         onSlotClick={(e, idx) => {
@@ -305,6 +312,7 @@ export const RenownView: React.FC = () => {
             ownedMarks={ownedMarks}
             viewMode={viewMode}
             getEffectiveCost={getEffectiveCost}
+            checkEligibility={checkEligibility}
             onDragStartCard={handleDragStartCard}
             onLibraryRankChange={handleLibraryRankChange}
             onCardToggleEquip={handleCardToggleEquip}
@@ -326,6 +334,7 @@ export const RenownView: React.FC = () => {
         markRanks={markRanks}
         currentBelt={currentBelt}
         getEffectiveCost={getEffectiveCost}
+        remainingNotches={remainingNotches}
       />
 
       <ImportModal

@@ -1,6 +1,8 @@
 import React from "react";
-import { Trash2, RotateCcw } from "lucide-react";
+import { Trash2, RotateCcw, Lock, Sparkles, Zap } from "lucide-react";
 import { ALL_MARKS, MarkItem } from "../data/renownData";
+import { KEYSTONE_SLOT_INDEX } from "./deckValidation";
+import { DraggingInfo } from "./useRenownDeck";
 
 export interface EquippedSlot {
   markId: number;
@@ -11,12 +13,15 @@ interface RenownBeltProps {
   currentBelt: (EquippedSlot | null)[];
   activeBuildSlot: number;
   totalNotches: number;
+  remainingNotches: number;
   offenseNotches: number;
   hasKeystone: boolean;
   dragOverSlot: number | null;
+  draggingInfo: DraggingInfo | null;
   setDragOverSlot: (slot: number | null) => void;
   onDragStartSocket: (e: React.DragEvent, idx: number) => void;
   onDragOver: (e: React.DragEvent, idx: number) => void;
+  onDragEnd: () => void;
   onDrop: (e: React.DragEvent, idx: number) => void;
   onClear: () => void;
   onSlotClick: (e: React.MouseEvent<HTMLDivElement>, idx: number) => void;
@@ -32,12 +37,15 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
   currentBelt,
   activeBuildSlot,
   totalNotches,
+  remainingNotches,
   offenseNotches,
   hasKeystone,
   dragOverSlot,
+  draggingInfo,
   setDragOverSlot,
   onDragStartSocket,
   onDragOver,
+  onDragEnd,
   onDrop,
   onClear,
   onSlotClick,
@@ -112,30 +120,57 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
         />
       </div>
 
-      {/* 10 Belt Sockets with Clash Royale drag and drop */}
+      {/* 10 Belt Sockets with Strict Role Constraints */}
       <div className="renown-slots-grid">
         {currentBelt.map((slotItem, idx) => {
-          const isKeystoneAnchor = idx === 4;
+          const isKeystoneAnchor = idx === KEYSTONE_SLOT_INDEX;
           const mark = slotItem ? ALL_MARKS.find((m) => m.id === slotItem.markId) : null;
           const effCost = mark && slotItem ? getEffectiveCost(mark, slotItem.rank) : 0;
           const isHovered = dragOverSlot === idx;
+
+          // Drag target validity
+          let dragClass = "";
+          if (draggingInfo) {
+            if (isKeystoneAnchor) {
+              dragClass = draggingInfo.isKeystone ? "drag-drop-valid" : "drag-drop-invalid";
+            } else {
+              if (draggingInfo.isKeystone) {
+                dragClass = "drag-drop-invalid";
+              } else if (!slotItem && draggingInfo.cost > remainingNotches) {
+                dragClass = "drag-drop-invalid";
+              } else {
+                dragClass = "drag-drop-valid";
+              }
+            }
+          }
+
+          const isCapacityLocked = !slotItem && !isKeystoneAnchor && remainingNotches === 0;
 
           return (
             <div
               key={idx}
               className={`renown-slot ${slotItem ? "occupied" : ""} ${
-                isKeystoneAnchor && !slotItem ? "keystone-anchor" : ""
-              } ${isHovered ? "drag-target-hover" : ""}`}
+                isKeystoneAnchor ? "keystone-anchor" : ""
+              } ${slotItem?.rank && mark?.active ? "active-marked" : ""} ${
+                isCapacityLocked ? "slot-capacity-locked" : ""
+              } ${isHovered ? "drag-target-hover" : ""} ${dragClass}`}
               draggable={Boolean(slotItem)}
               onDragStart={(e) => slotItem && onDragStartSocket(e, idx)}
               onDragOver={(e) => onDragOver(e, idx)}
               onDragLeave={() => setDragOverSlot(null)}
+              onDragEnd={onDragEnd}
               onDrop={(e) => onDrop(e, idx)}
               onClick={(e) => onSlotClick(e, idx)}
               title={
                 slotItem
-                  ? `${mark?.name} (R${slotItem.rank}) - Click to manage or drag to reorder`
-                  : `Slot ${idx + 1}${isKeystoneAnchor ? " (Keystone Anchor)" : ""} - Click to equip`
+                  ? `${mark?.name} (R${slotItem.rank}) &bull; Cost: ${effCost}N ${
+                      mark?.keystone ? " &bull; Keystone" : ""
+                    } ${mark?.active ? " &bull; Active (Shift+F)" : ""}`
+                  : isKeystoneAnchor
+                  ? "Slot 5: Dedicated Keystone Anchor (Only Keystone marks can be socketed here)"
+                  : isCapacityLocked
+                  ? "Slot Locked: All 10 Notches allocated. Unequip a mark to unlock."
+                  : `Passive Socket ${idx + 1} (${remainingNotches} Notches available)`
               }
             >
               {slotItem && mark ? (
@@ -149,11 +184,71 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
                   />
                   <span className="slot-rank">R{slotItem.rank}</span>
                   <span className="slot-cost">{effCost}N</span>
+
+                  {/* Keystone or Active indicator badge */}
+                  {mark.keystone && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: "4px",
+                        right: "5px",
+                        color: "var(--accent-gold)"
+                      }}
+                      title="Keystone Mark"
+                    >
+                      <Sparkles size={11} />
+                    </span>
+                  )}
+                  {mark.active && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: "4px",
+                        right: "5px",
+                        color: "#DDD6FE"
+                      }}
+                      title="Active Ability (Shift+F)"
+                    >
+                      <Zap size={11} />
+                    </span>
+                  )}
+
+                  {/* Notch pips under mark */}
+                  <div className="renown-notch-pips">
+                    {Array.from({ length: effCost }).map((_, pIdx) => (
+                      <span key={pIdx} className="renown-notch-pip" />
+                    ))}
+                  </div>
                 </>
+              ) : isKeystoneAnchor ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", textAlign: "center", padding: "4px" }}>
+                  <Sparkles size={14} color="var(--accent-gold)" />
+                  <span style={{ fontSize: "11px", color: "var(--accent-gold)", fontWeight: 700, letterSpacing: "-0.01em" }}>
+                    KEYSTONE
+                  </span>
+                  <span style={{ fontSize: "11px", color: "rgba(245, 158, 11, 0.7)", fontWeight: 600 }}>
+                    ANCHOR
+                  </span>
+                </div>
+              ) : isCapacityLocked ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", textAlign: "center", padding: "4px" }}>
+                  <Lock size={12} color="var(--text-muted)" />
+                  <span style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: 600 }}>
+                    LOCKED
+                  </span>
+                  <span style={{ fontSize: "11px", color: "rgba(255, 255, 255, 0.25)" }}>
+                    10/10N
+                  </span>
+                </div>
               ) : (
-                <span style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: 600 }}>
-                  {isKeystoneAnchor ? "KEYSTONE" : idx + 1}
-                </span>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", textAlign: "center" }}>
+                  <span style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: 700 }}>
+                    {idx + 1}
+                  </span>
+                  <span style={{ fontSize: "11px", color: "var(--text-secondary)", fontWeight: 600 }}>
+                    &le;{remainingNotches}N
+                  </span>
+                </div>
               )}
             </div>
           );
@@ -179,6 +274,7 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
               const mark = ALL_MARKS.find((m) => m.id === item.markId);
               if (!mark) return null;
               const effCost = getEffectiveCost(mark, item.rank);
+              const isKeystone = socketPopover.slotIdx === KEYSTONE_SLOT_INDEX;
 
               return (
                 <>
@@ -202,7 +298,7 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
                         {mark.name}
                       </div>
                       <div style={{ fontSize: "11px", color: "var(--accent-gold)" }}>
-                        {effCost} Notches &bull; {mark.tier}
+                        {effCost} Notches &bull; {mark.tier} {isKeystone ? "&bull; Keystone" : ""}
                       </div>
                     </div>
                   </div>

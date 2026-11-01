@@ -1,7 +1,8 @@
 import React from "react";
-import { Lock } from "lucide-react";
+import { Lock, Sparkles, Zap } from "lucide-react";
 import { MarkItem } from "../data/renownData";
 import { EquippedSlot } from "./RenownBelt";
+import { EligibilityResult } from "./deckValidation";
 
 interface RenownGridProps {
   marks: MarkItem[];
@@ -10,6 +11,7 @@ interface RenownGridProps {
   ownedMarks: Record<number, number>;
   viewMode: "all" | "owned";
   getEffectiveCost: (mark: MarkItem, rank: number) => number;
+  checkEligibility: (mark: MarkItem, rank: number) => EligibilityResult;
   onDragStartCard: (e: React.DragEvent, markId: number) => void;
   onLibraryRankChange: (markId: number, rank: number, e: React.MouseEvent) => void;
   onCardToggleEquip: (mark: MarkItem) => void;
@@ -22,6 +24,7 @@ export const RenownGrid: React.FC<RenownGridProps> = ({
   ownedMarks,
   viewMode,
   getEffectiveCost,
+  checkEligibility,
   onDragStartCard,
   onLibraryRankChange,
   onCardToggleEquip
@@ -38,18 +41,25 @@ export const RenownGrid: React.FC<RenownGridProps> = ({
         const ownedRank = ownedMarks[m.id] || 0;
         const descParts = m.desc.split(" | ");
 
+        const eligibility = checkEligibility(m, currentRank);
+
         return (
           <div
             key={m.id}
             className={`renown-mark-card ${isEquipped ? "equipped-in-belt" : ""} ${
               !isOwned ? "unowned-locked" : ""
             }`}
-            draggable={isOwned}
+            style={{
+              opacity: !isOwned || (!isEquipped && !eligibility.eligible) ? 0.7 : 1
+            }}
+            draggable={isOwned && (isEquipped || eligibility.eligible)}
             onDragStart={(e) => isOwned && onDragStartCard(e, m.id)}
             title={
               !isOwned
                 ? `${m.name} is locked in your collection. Unlock via: ${m.advancement}`
-                : `${m.name} - Drag to belt or click to equip`
+                : isEquipped
+                ? `${m.name} (Equipped in Belt)`
+                : eligibility.reason || `${m.name} - Drag to belt or click to equip`
             }
           >
             <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
@@ -82,8 +92,18 @@ export const RenownGrid: React.FC<RenownGridProps> = ({
                   <span className={`renown-pill renown-pill-${m.tier.toLowerCase()}`}>
                     {m.tier}
                   </span>
-                  {m.keystone && <span className="renown-pill renown-pill-keystone">Keystone</span>}
-                  {m.active && <span className="renown-pill renown-pill-active">Active</span>}
+                  {m.keystone && (
+                    <span className="renown-pill renown-pill-keystone" style={{ gap: "3px" }}>
+                      <Sparkles size={10} />
+                      <span>Keystone</span>
+                    </span>
+                  )}
+                  {m.active && (
+                    <span className="renown-pill renown-pill-active" style={{ gap: "3px" }}>
+                      <Zap size={10} />
+                      <span>Active</span>
+                    </span>
+                  )}
                   {!isOwned && (
                     <span className="renown-pill renown-pill-locked">
                       <Lock size={10} />
@@ -93,6 +113,19 @@ export const RenownGrid: React.FC<RenownGridProps> = ({
                   {viewMode === "owned" && isOwned && (
                     <span className="renown-pill" style={{ background: "rgba(56, 189, 248, 0.15)", color: "#38BDF8" }}>
                       Mastery R{ownedRank}
+                    </span>
+                  )}
+                  {!isEquipped && !eligibility.eligible && eligibility.reason && (
+                    <span
+                      className="renown-pill"
+                      style={{
+                        background: "rgba(239, 68, 68, 0.15)",
+                        color: "#FCA5A5",
+                        border: "1px solid rgba(239, 68, 68, 0.3)"
+                      }}
+                      title={eligibility.reason}
+                    >
+                      {eligibility.actionLabel}
                     </span>
                   )}
                 </div>
@@ -130,15 +163,35 @@ export const RenownGrid: React.FC<RenownGridProps> = ({
                 ))}
               </div>
 
-              <button
-                type="button"
-                className={`renown-btn ${isEquipped ? "renown-btn-gold" : ""}`}
-                style={{ padding: "4px 10px", fontSize: "11px" }}
-                disabled={!isOwned}
-                onClick={() => onCardToggleEquip(m)}
-              >
-                {isEquipped ? "Unequip" : "Equip"}
-              </button>
+              {isEquipped ? (
+                <button
+                  type="button"
+                  className="renown-btn renown-btn-gold"
+                  style={{ padding: "4px 10px", fontSize: "11px" }}
+                  onClick={() => onCardToggleEquip(m)}
+                >
+                  Unequip
+                </button>
+              ) : !eligibility.eligible ? (
+                <button
+                  type="button"
+                  className="renown-btn"
+                  style={{ padding: "4px 10px", fontSize: "11px", opacity: 0.5, cursor: "not-allowed" }}
+                  disabled
+                  title={eligibility.reason}
+                >
+                  {eligibility.actionLabel}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className={`renown-btn ${m.keystone ? "renown-btn-gold" : ""}`}
+                  style={{ padding: "4px 10px", fontSize: "11px" }}
+                  onClick={() => onCardToggleEquip(m)}
+                >
+                  {eligibility.actionLabel}
+                </button>
+              )}
             </div>
           </div>
         );
