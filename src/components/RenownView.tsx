@@ -26,6 +26,8 @@ export const RenownView: React.FC = () => {
     handleToggleSfx,
     activeBuildSlot,
     setActiveBuildSlot,
+    beltCapacity,
+    setBeltCapacity,
     currentBelt,
     clearCurrentBelt,
     markRanks,
@@ -115,7 +117,7 @@ export const RenownView: React.FC = () => {
           />
           <div>
             <h1 className="renown-brand-title">Renown SMP</h1>
-            <div className="renown-brand-sub">10-Notch Theorycraft & In-Game Loadout Planner</div>
+            <div className="renown-brand-sub">9-Slot Belt Theorycraft &amp; In-Game Loadout Planner</div>
           </div>
         </div>
 
@@ -195,6 +197,8 @@ export const RenownView: React.FC = () => {
       <RenownBelt
         currentBelt={currentBelt}
         activeBuildSlot={activeBuildSlot}
+        beltCapacity={beltCapacity}
+        onChangeBeltCapacity={setBeltCapacity}
         totalNotches={totalNotches}
         remainingNotches={remainingNotches}
         offenseNotches={offenseNotches}
@@ -321,6 +325,7 @@ export const RenownView: React.FC = () => {
 
         <RenownInspector
           statsBonus={statsBonus}
+          beltCapacity={beltCapacity}
           equippedActive={equippedActive}
         />
       </div>
@@ -335,6 +340,7 @@ export const RenownView: React.FC = () => {
         currentBelt={currentBelt}
         getEffectiveCost={getEffectiveCost}
         remainingNotches={remainingNotches}
+        beltCapacity={beltCapacity}
       />
 
       <ImportModal

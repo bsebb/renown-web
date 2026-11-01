@@ -36,7 +36,7 @@ export const RenownGrid: React.FC<RenownGridProps> = ({
         const currentItem = currentBelt.find((s) => s?.markId === m.id);
         const currentRank = currentItem ? currentItem.rank : markRanks[m.id] || 1;
         const effCost = getEffectiveCost(m, currentRank);
-        const isDiscounted = m.cost > 1 && currentRank === 3;
+        const isDiscounted = !m.keystone && m.cost >= 3 && currentRank === 3;
         const isOwned = viewMode !== "owned" || Boolean(ownedMarks[m.id]);
         const ownedRank = ownedMarks[m.id] || 0;
         const descParts = m.desc.split(" | ");
@@ -87,7 +87,7 @@ export const RenownGrid: React.FC<RenownGridProps> = ({
 
                 <div style={{ display: "flex", alignItems: "center", gap: "5px", flexWrap: "wrap", marginTop: "4px" }}>
                   <span className={`renown-pill ${isDiscounted ? "renown-pill-discount" : "renown-pill-cost"}`}>
-                    {effCost} Notch{isDiscounted ? " (R3 -1N)" : ""}
+                    {m.keystone ? "0 Notches" : `${effCost} Notch${effCost === 1 ? "" : "es"}${isDiscounted ? " (R3 -1N)" : ""}`}
                   </span>
                   <span className={`renown-pill renown-pill-${m.tier.toLowerCase()}`}>
                     {m.tier}

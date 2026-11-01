@@ -1,6 +1,7 @@
 import React from "react";
 import { Heart, Info } from "lucide-react";
 import { ALL_MARKS } from "../data/renownData";
+import { BeltCapacityTier } from "./deckValidation";
 import { EquippedSlot } from "./RenownBelt";
 
 export interface CombatStats {
@@ -9,18 +10,20 @@ export interface CombatStats {
   reach: number;
   reachBonus: number;
   toughness: number;
-  deflect: number;
-  maceExecute: number;
+  kbResistPct: number;
+  speedPct: number;
   safeFall: number;
 }
 
 interface RenownInspectorProps {
   statsBonus: CombatStats;
+  beltCapacity: BeltCapacityTier;
   equippedActive?: EquippedSlot;
 }
 
 export const RenownInspector: React.FC<RenownInspectorProps> = ({
   statsBonus,
+  beltCapacity,
   equippedActive
 }) => {
   const activeMarkItem = equippedActive ? ALL_MARKS.find((m) => m.id === equippedActive.markId) : null;
@@ -40,7 +43,7 @@ export const RenownInspector: React.FC<RenownInspectorProps> = ({
           Attribute Inspector
         </span>
         <span style={{ fontSize: "11px", color: "var(--accent-gold)", fontWeight: 600 }}>
-          Live Scaling
+          1.21 Server Caps
         </span>
       </div>
 
@@ -49,11 +52,10 @@ export const RenownInspector: React.FC<RenownInspectorProps> = ({
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "11px" }}>
           <span style={{ color: "var(--text-secondary)" }}>Effective Max Health:</span>
           <span style={{ fontWeight: 700, color: "#FFFFFF", fontVariantNumeric: "tabular-nums" }}>
-            {statsBonus.totalHp.toFixed(1)} HP ({Math.round(statsBonus.totalHp / 2)} Hearts)
+            {statsBonus.totalHp.toFixed(1)} HP ({(statsBonus.totalHp / 2).toFixed(1)} Hearts)
           </span>
         </div>
 
-        {/* Hearts row */}
         <div
           style={{
             display: "flex",
@@ -88,7 +90,7 @@ export const RenownInspector: React.FC<RenownInspectorProps> = ({
             fontSize: "12px"
           }}
         >
-          <span style={{ color: "var(--text-secondary)" }}>Attack Reach (Grounded):</span>
+          <span style={{ color: "var(--text-secondary)" }}>Grounded Reach:</span>
           <span
             style={{
               fontWeight: 700,
@@ -134,15 +136,15 @@ export const RenownInspector: React.FC<RenownInspectorProps> = ({
             fontSize: "12px"
           }}
         >
-          <span style={{ color: "var(--text-secondary)" }}>Projectile Deflect:</span>
+          <span style={{ color: "var(--text-secondary)" }}>Knockback Resistance:</span>
           <span
             style={{
               fontWeight: 700,
-              color: statsBonus.deflect > 0 ? "#4BC369" : "#FFFFFF",
+              color: statsBonus.kbResistPct > 0 ? "#4BC369" : "#FFFFFF",
               fontVariantNumeric: "tabular-nums"
             }}
           >
-            +{statsBonus.deflect}%
+            +{statsBonus.kbResistPct}%
           </span>
         </div>
 
@@ -157,15 +159,20 @@ export const RenownInspector: React.FC<RenownInspectorProps> = ({
             fontSize: "12px"
           }}
         >
-          <span style={{ color: "var(--text-secondary)" }}>Mace Execution Scaling:</span>
+          <span style={{ color: "var(--text-secondary)" }}>Sprint Speed Delta:</span>
           <span
             style={{
               fontWeight: 700,
-              color: statsBonus.maceExecute > 0 ? "#BE5FEB" : "#FFFFFF",
+              color:
+                statsBonus.speedPct > 0
+                  ? "#38BDF8"
+                  : statsBonus.speedPct < 0
+                  ? "#FCA5A5"
+                  : "#FFFFFF",
               fontVariantNumeric: "tabular-nums"
             }}
           >
-            +{statsBonus.maceExecute}%
+            {statsBonus.speedPct >= 0 ? `+${statsBonus.speedPct}%` : `${statsBonus.speedPct}%`}
           </span>
         </div>
 
@@ -221,12 +228,12 @@ export const RenownInspector: React.FC<RenownInspectorProps> = ({
                 {activeMarkItem.name} (R{equippedActive.rank})
               </div>
               <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "2px" }}>
-                Triggered in-game with Shift+F (Off-hand swap)
+                Triggered in-game with Shift+F (Totems remain safely in offhand)
               </div>
             </div>
           ) : (
             <span style={{ color: "var(--text-muted)", fontSize: "11px" }}>
-              None equipped. Equip an Active Mark (e.g. Over-Overkill, Uneasy Alliance, How Did We Get Here).
+              None equipped. Equip up to 1 Shift+F Active (Return to Sender, Uneasy Alliance, or How Did We Get Here?).
             </span>
           )}
         </div>
@@ -253,12 +260,12 @@ export const RenownInspector: React.FC<RenownInspectorProps> = ({
           }}
         >
           <Info size={12} />
-          <span>Theorycraft Rules</span>
+          <span>9-Slot Belt Invariants</span>
         </div>
-        <p>1. Maximum 10 Notches across all equipped marks.</p>
-        <p>2. Maximum 1 Keystone mark (Anchor slot 5 recommended).</p>
-        <p>3. Maximum 6 Offense marks.</p>
-        <p>4. Reaching Rank 3 on 2-5 Notch marks gives a -1 Notch discount!</p>
+        <p>1. Passive Belt scales 6N (Day 1) to 7N (Crucible) to 8N (Sovereign). Active tier: {beltCapacity}N.</p>
+        <p>2. Center Anchor holds 1 of 12 Keystones (0N, 3 per domain), or grants +1N Purist if empty.</p>
+        <p>3. Maximum 4 Passive Offense Notches.</p>
+        <p>4. Rank 3 grants -1 Notch discount on non-Keystone Tier III+ Marks (3N to 5N).</p>
       </div>
     </aside>
   );

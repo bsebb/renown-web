@@ -1,7 +1,13 @@
 import React from "react";
 import { Trash2, RotateCcw, Lock, Zap, Crown } from "lucide-react";
 import { ALL_MARKS, MarkItem } from "../data/renownData";
-import { KEYSTONE_SLOT_INDEX } from "./deckValidation";
+import {
+  BeltCapacityTier,
+  KEYSTONE_SLOT_INDEX,
+  PASSIVE_OFFENSE_CAP,
+  UNANCHORED_PURIST_BONUS
+} from "./deckValidation";
+import { SlidingSegmented } from "./SlidingSegmented";
 import { DraggingInfo } from "./useRenownDeck";
 
 export interface EquippedSlot {
@@ -12,6 +18,8 @@ export interface EquippedSlot {
 interface RenownBeltProps {
   currentBelt: (EquippedSlot | null)[];
   activeBuildSlot: number;
+  beltCapacity: BeltCapacityTier;
+  onChangeBeltCapacity: (cap: BeltCapacityTier) => void;
   totalNotches: number;
   remainingNotches: number;
   offenseNotches: number;
@@ -36,6 +44,8 @@ interface RenownBeltProps {
 export const RenownBelt: React.FC<RenownBeltProps> = ({
   currentBelt,
   activeBuildSlot,
+  beltCapacity,
+  onChangeBeltCapacity,
   totalNotches,
   remainingNotches,
   offenseNotches,
@@ -56,12 +66,15 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
   onUnequipSlot,
   getEffectiveCost
 }) => {
+  const effectiveCap = beltCapacity + (hasKeystone ? 0 : UNANCHORED_PURIST_BONUS);
+  const isOverBudget = totalNotches > effectiveCap;
+
   return (
     <section className="renown-belt-chassis" aria-label="Equipped Loadout Belt">
       <div className="renown-chassis-header">
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
           <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--text-primary)" }}>
-            Equipped 10-Notch Belt
+            Symmetrical 9-Slot Belt
           </span>
           <span
             style={{
@@ -73,29 +86,53 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
               fontWeight: 600
             }}
           >
-            Deck Slot {activeBuildSlot} Active
+            Deck {activeBuildSlot}
           </span>
+
+          <SlidingSegmented
+            options={[
+              { id: 6, label: "Day 1 (6N)" },
+              { id: 7, label: "Crucible (7N)" },
+              { id: 8, label: "Sovereign (8N)" }
+            ]}
+            value={beltCapacity}
+            onChange={(val) => onChangeBeltCapacity(val as BeltCapacityTier)}
+          />
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
           <div className="renown-meter-badge">
-            <span style={{ color: "var(--text-muted)" }}>Capacity:</span>
-            <span style={{ color: totalNotches >= 10 ? "var(--accent-gold)" : "var(--text-primary)" }}>
-              {totalNotches} / 10 Notches
+            <span style={{ color: "var(--text-muted)" }}>Passive:</span>
+            <span
+              style={{
+                color: isOverBudget
+                  ? "#EF4444"
+                  : totalNotches === effectiveCap
+                  ? "var(--accent-gold)"
+                  : "var(--text-primary)",
+                fontVariantNumeric: "tabular-nums"
+              }}
+            >
+              {totalNotches} / {effectiveCap} Notches{!hasKeystone ? " (+1N Purist)" : ""}
             </span>
           </div>
 
           <div className="renown-meter-badge">
             <span style={{ color: "var(--text-muted)" }}>Offense:</span>
-            <span style={{ color: offenseNotches >= 6 ? "#EF4444" : "var(--text-primary)" }}>
-              {offenseNotches} / 6 Notches
+            <span
+              style={{
+                color: offenseNotches >= PASSIVE_OFFENSE_CAP ? "#EF4444" : "var(--text-primary)",
+                fontVariantNumeric: "tabular-nums"
+              }}
+            >
+              {offenseNotches} / {PASSIVE_OFFENSE_CAP} Notches
             </span>
           </div>
 
           <div className="renown-meter-badge">
             <span style={{ color: "var(--text-muted)" }}>Keystone:</span>
-            <span style={{ color: hasKeystone ? "var(--accent-gold)" : "var(--text-muted)" }}>
-              {hasKeystone ? "1 / 1" : "0 / 1"}
+            <span style={{ color: hasKeystone ? "var(--accent-gold)" : "var(--text-secondary)" }}>
+              {hasKeystone ? "1 / 1 (0N)" : "Empty (+1N Purist)"}
             </span>
           </div>
 
@@ -104,7 +141,7 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
             className="renown-btn"
             style={{ padding: "4px 8px", fontSize: "11px" }}
             onClick={onClear}
-            title="Clear all equipped marks from this slot"
+            title="Clear all equipped marks from this deck"
           >
             <Trash2 size={12} />
             <span>Clear</span>
@@ -112,15 +149,22 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
         </div>
       </div>
 
-      {/* Progress Bar for 10-Notch Capacity */}
-      <div className="renown-notch-bar-wrap" role="progressbar" aria-valuenow={totalNotches} aria-valuemax={10}>
+      {/* Progress Bar for Passive Notch Capacity */}
+      <div
+        className="renown-notch-bar-wrap"
+        role="progressbar"
+        aria-valuenow={totalNotches}
+        aria-valuemax={effectiveCap}
+      >
         <div
-          className={`renown-notch-bar-fill ${totalNotches >= 10 ? "full" : ""}`}
-          style={{ width: `${Math.min((totalNotches / 10) * 100, 100)}%` }}
+          className={`renown-notch-bar-fill ${
+            isOverBudget ? "danger" : totalNotches === effectiveCap ? "full" : ""
+          }`}
+          style={{ width: `${Math.min((totalNotches / effectiveCap) * 100, 100)}%` }}
         />
       </div>
 
-      {/* 10 Belt Sockets with Strict Role Constraints */}
+      {/* 9 Belt Sockets: 4 Passive Left + 1 Center Zero-Notch Keystone Anchor + 4 Passive Right */}
       <div className="renown-slots-grid">
         {currentBelt.map((slotItem, idx) => {
           const isKeystoneAnchor = idx === KEYSTONE_SLOT_INDEX;
@@ -128,7 +172,6 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
           const effCost = mark && slotItem ? getEffectiveCost(mark, slotItem.rank) : 0;
           const isHovered = dragOverSlot === idx;
 
-          // Drag target validity
           let dragClass = "";
           if (draggingInfo) {
             if (isKeystoneAnchor) {
@@ -145,6 +188,7 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
           }
 
           const isCapacityLocked = !slotItem && !isKeystoneAnchor && remainingNotches === 0;
+          const passiveLabelNum = idx < KEYSTONE_SLOT_INDEX ? idx + 1 : idx;
 
           return (
             <div
@@ -163,14 +207,14 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
               onClick={(e) => onSlotClick(e, idx)}
               title={
                 slotItem
-                  ? `${mark?.name} (R${slotItem.rank}) &bull; Cost: ${effCost}N ${
-                      mark?.keystone ? " &bull; Keystone" : ""
-                    } ${mark?.active ? " &bull; Active (Shift+F)" : ""}`
+                  ? `${mark?.name} (R${slotItem.rank}) - ${
+                      mark?.keystone ? "Zero-Notch Keystone" : `Cost: ${effCost}N`
+                    }${mark?.active ? " - Active (Shift+F)" : ""}`
                   : isKeystoneAnchor
-                  ? "Slot 5: Dedicated Keystone Anchor (Only Keystone marks can be socketed here)"
+                  ? "Center Slot 5: Socket 1 of 12 Keystones (0N), or leave empty for +1 Unanchored Purist Notch"
                   : isCapacityLocked
-                  ? "Slot Locked: All 10 Notches allocated. Unequip a mark to unlock."
-                  : `Passive Socket ${idx + 1} (${remainingNotches} Notches available)`
+                  ? `Slot Locked: All ${effectiveCap} Passive Notches allocated. Unequip a mark or upgrade belt tier.`
+                  : `Passive Socket ${passiveLabelNum} (${remainingNotches} Notches available)`
               }
             >
               {slotItem && mark ? (
@@ -184,10 +228,13 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
                       (e.target as HTMLElement).style.opacity = "0.2";
                     }}
                   />
-                  <span className={`slot-rank ${isKeystoneAnchor ? "keystone-slot-rank" : ""}`}>R{slotItem.rank}</span>
-                  <span className={`slot-cost ${isKeystoneAnchor ? "keystone-slot-cost" : ""}`}>{effCost}N</span>
+                  <span className={`slot-rank ${isKeystoneAnchor ? "keystone-slot-rank" : ""}`}>
+                    R{slotItem.rank}
+                  </span>
+                  <span className={`slot-cost ${isKeystoneAnchor ? "keystone-slot-cost" : ""}`}>
+                    {mark.keystone ? "0N" : `${effCost}N`}
+                  </span>
 
-                  {/* Keystone or Active indicator badge */}
                   {mark.keystone && (
                     <span
                       style={{
@@ -196,7 +243,7 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
                         right: "5px",
                         color: "var(--accent-gold)"
                       }}
-                      title="Keystone Mark (Build Centerpiece)"
+                      title="Zero-Notch Keystone Anchor"
                     >
                       <Crown size={12} />
                     </span>
@@ -215,40 +262,54 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
                     </span>
                   )}
 
-                  {/* Notch pips under mark */}
-                  <div className="renown-notch-pips">
-                    {Array.from({ length: effCost }).map((_, pIdx) => (
-                      <span key={pIdx} className={`renown-notch-pip ${isKeystoneAnchor ? "keystone-pip" : ""}`} />
-                    ))}
-                  </div>
+                  {!mark.keystone && effCost > 0 && (
+                    <div className="renown-notch-pips">
+                      {Array.from({ length: effCost }).map((_, pIdx) => (
+                        <span key={pIdx} className="renown-notch-pip" />
+                      ))}
+                    </div>
+                  )}
                 </>
               ) : isKeystoneAnchor ? (
                 <div className="keystone-empty-crest">
                   <Crown size={18} color="var(--accent-gold)" className="keystone-crown-icon" />
-                  <span className="keystone-empty-title">
-                    KEYSTONE
-                  </span>
-                  <span className="keystone-empty-sub">
-                    ANCHOR
-                  </span>
+                  <span className="keystone-empty-title">KEYSTONE</span>
+                  <span className="keystone-empty-sub">0N | +1N Purist</span>
                 </div>
               ) : isCapacityLocked ? (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", textAlign: "center", padding: "4px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "2px",
+                    textAlign: "center",
+                    padding: "4px"
+                  }}
+                >
                   <Lock size={12} color="var(--text-muted)" />
                   <span style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: 600 }}>
-                    LOCKED
+                    Full
                   </span>
-                  <span style={{ fontSize: "11px", color: "rgba(255, 255, 255, 0.25)" }}>
-                    10/10N
+                  <span style={{ fontSize: "10px", color: "rgba(255, 255, 255, 0.35)" }}>
+                    {totalNotches}/{effectiveCap}N
                   </span>
                 </div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", textAlign: "center" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "2px",
+                    textAlign: "center"
+                  }}
+                >
                   <span style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: 700 }}>
-                    {idx + 1}
+                    {passiveLabelNum}
                   </span>
                   <span style={{ fontSize: "11px", color: "var(--text-secondary)", fontWeight: 600 }}>
-                    &le;{remainingNotches}N
+                    max {remainingNotches}N
                   </span>
                 </div>
               )}
@@ -260,10 +321,7 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
       {/* Floating Socket Context Popover */}
       {socketPopover && currentBelt[socketPopover.slotIdx] && (
         <>
-          <div
-            style={{ position: "fixed", inset: 0, zIndex: 499 }}
-            onClick={onClosePopover}
-          />
+          <div style={{ position: "fixed", inset: 0, zIndex: 499 }} onClick={onClosePopover} />
           <div
             className="renown-socket-popover"
             style={{
@@ -300,7 +358,7 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
                         {mark.name}
                       </div>
                       <div style={{ fontSize: "11px", color: "var(--accent-gold)" }}>
-                        {effCost} Notches &bull; {mark.tier} {isKeystone ? "&bull; Keystone" : ""}
+                        {isKeystone ? "Keystone (0N)" : `${effCost} Notches`} | {mark.tier}
                       </div>
                     </div>
                   </div>
@@ -314,7 +372,7 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
                       paddingTop: "8px"
                     }}
                   >
-                    <span style={{ fontSize: "11px", color: "var(--text-secondary)" }}>Rank:</span>
+                    <span style={{ fontSize: "11px", color: "var(--text-secondary)" }}>Mastery:</span>
                     <div className="renown-rank-selector">
                       {[1, 2, 3].map((r) => (
                         <button

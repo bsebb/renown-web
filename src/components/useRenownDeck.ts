@@ -4,7 +4,9 @@ import { RenownAudioEngine } from "../utils/renownAudio";
 import { EquippedSlot } from "./RenownBelt";
 import { CombatStats } from "./RenownInspector";
 import {
+  BELT_TOTAL_SLOTS,
   KEYSTONE_SLOT_INDEX,
+  BeltCapacityTier,
   getEffectiveCost,
   calculateBeltTotals,
   checkMarkEligibility,
@@ -15,11 +17,20 @@ import {
   STORAGE_KEY_ACTIVE_DECK,
   STORAGE_KEY_OWNED,
   STORAGE_KEY_MARK_RANKS,
+  STORAGE_KEY_BELT_CAPACITY,
   loadFromStorage,
   saveToStorage,
   getSanitizedBuildSlots,
+  getSanitizedBeltCapacity,
   getDefaultOwnedMarks
 } from "./renownStorage";
+import {
+  parseRenownDeepLink,
+  parseImportedCollection,
+  buildDay1StarterCollection,
+  buildMaxSovereignCollection,
+  computeBeltStats
+} from "./renownImportExport";
 
 export type DomainFilter = "ALL" | "Offense" | "Defense" | "Mobility" | "Utility";
 
@@ -34,50 +45,37 @@ export interface DraggingInfo {
 export function useRenownDeck() {
   const audio = useMemo(() => new RenownAudioEngine(), []);
   const [sfxEnabled, setSfxEnabled] = useState<boolean>(() => audio.enabled);
-
-  const [activeBuildSlot, setActiveBuildSlot] = useState<number>(() => {
-    return loadFromStorage<number>(STORAGE_KEY_ACTIVE_DECK, 1);
-  });
-
-  const [buildSlots, setBuildSlots] = useState<Record<number, (EquippedSlot | null)[]>>(() => {
-    return getSanitizedBuildSlots();
-  });
-
-  const [markRanks, setMarkRanks] = useState<Record<number, number>>(() => {
-    return loadFromStorage<Record<number, number>>(STORAGE_KEY_MARK_RANKS, {});
-  });
-
+  const [activeBuildSlot, setActiveBuildSlot] = useState<number>(() =>
+    loadFromStorage<number>(STORAGE_KEY_ACTIVE_DECK, 1)
+  );
+  const [beltCapacity, setBeltCapacityState] = useState<BeltCapacityTier>(() =>
+    getSanitizedBeltCapacity()
+  );
+  const [buildSlots, setBuildSlots] = useState<Record<number, (EquippedSlot | null)[]>>(() =>
+    getSanitizedBuildSlots()
+  );
+  const [markRanks, setMarkRanks] = useState<Record<number, number>>(() =>
+    loadFromStorage<Record<number, number>>(STORAGE_KEY_MARK_RANKS, {})
+  );
   const [viewMode, setViewMode] = useState<"all" | "owned">("all");
-  const [ownedMarks, setOwnedMarks] = useState<Record<number, number>>(() => {
-    return loadFromStorage<Record<number, number>>(STORAGE_KEY_OWNED, getDefaultOwnedMarks());
-  });
+  const [ownedMarks, setOwnedMarks] = useState<Record<number, number>>(() =>
+    loadFromStorage<Record<number, number>>(STORAGE_KEY_OWNED, getDefaultOwnedMarks())
+  );
 
-  // LocalStorage synchronizations
-  useEffect(() => {
-    saveToStorage(STORAGE_KEY_BUILD_SLOTS, buildSlots);
-  }, [buildSlots]);
-
-  useEffect(() => {
-    saveToStorage(STORAGE_KEY_ACTIVE_DECK, activeBuildSlot);
-  }, [activeBuildSlot]);
-
-  useEffect(() => {
-    saveToStorage(STORAGE_KEY_OWNED, ownedMarks);
-  }, [ownedMarks]);
-
-  useEffect(() => {
-    saveToStorage(STORAGE_KEY_MARK_RANKS, markRanks);
-  }, [markRanks]);
+  useEffect(() => saveToStorage(STORAGE_KEY_BUILD_SLOTS, buildSlots), [buildSlots]);
+  useEffect(() => saveToStorage(STORAGE_KEY_ACTIVE_DECK, activeBuildSlot), [activeBuildSlot]);
+  useEffect(() => saveToStorage(STORAGE_KEY_BELT_CAPACITY, beltCapacity), [beltCapacity]);
+  useEffect(() => saveToStorage(STORAGE_KEY_OWNED, ownedMarks), [ownedMarks]);
+  useEffect(() => saveToStorage(STORAGE_KEY_MARK_RANKS, markRanks), [markRanks]);
 
   const [activeDomain, setActiveDomain] = useState<DomainFilter>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
   const [draggingInfo, setDraggingInfo] = useState<DraggingInfo | null>(null);
   const dragSourceRef = useRef<DraggingInfo | null>(null);
 
-  const currentBelt = buildSlots[activeBuildSlot] || new Array(10).fill(null);
+  const currentBelt = buildSlots[activeBuildSlot] || new Array(BELT_TOTAL_SLOTS).fill(null);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -86,117 +84,95 @@ export function useRenownDeck() {
     }, 3400);
   };
 
+  const setBeltCapacity = (nextCap: BeltCapacityTier) => {
+    setBeltCapacityState(nextCap);
+    audio.play("click");
+  };
+
   const handleToggleSfx = () => {
     const next = audio.toggle();
     setSfxEnabled(next);
     if (next) audio.play("click");
   };
 
-  const totals = useMemo(() => calculateBeltTotals(currentBelt), [currentBelt]);
-  const {
-    totalNotches,
-    remainingNotches,
-    offenseNotches,
-    equippedKeystone,
-    equippedActive
-  } = totals;
+  const totals = useMemo(
+    () => calculateBeltTotals(currentBelt, beltCapacity),
+    [currentBelt, beltCapacity]
+  );
+  const { totalNotches, remainingNotches, offenseNotches, equippedKeystone, equippedActive } =
+    totals;
 
-  const equippedItems = useMemo(() => {
-    return currentBelt.filter((s): s is EquippedSlot => s !== null);
-  }, [currentBelt]);
+  const equippedItems = useMemo(
+    () => currentBelt.filter((s): s is EquippedSlot => s !== null),
+    [currentBelt]
+  );
 
-  // Deep-link parsing on mount
   useEffect(() => {
-    const hash = window.location.hash;
-    if (hash.includes("owned=")) {
-      const match = hash.match(/owned=([^&]+)/);
-      if (match && match[1]) {
-        try {
-          const parts = match[1].split(",");
-          const parsed: Record<number, number> = {};
-          parts.forEach((p) => {
-            const [idStr, rStr] = p.split(":");
-            const id = parseInt(idStr, 10);
-            const r = parseInt(rStr, 10) || 1;
-            if (id >= 1 && id <= 55) parsed[id] = r;
-          });
-          if (Object.keys(parsed).length > 0) {
-            setOwnedMarks(parsed);
-            setViewMode("owned");
-            showToast(`Imported ${Object.keys(parsed).length} owned marks from link!`);
-          }
-        } catch {
-          // ignore
-        }
-      }
-    } else if (hash.includes("b=")) {
-      const match = hash.match(/b=([^&]+)/);
-      if (match && match[1]) {
-        try {
-          const tokens = match[1].split(",");
-          const newBelt: (EquippedSlot | null)[] = new Array(10).fill(null);
-          tokens.forEach((t, idx) => {
-            if (idx < 10 && t && t !== "0") {
-              const [idStr, rStr] = t.split(":");
-              const id = parseInt(idStr, 10);
-              const r = parseInt(rStr, 10) || 1;
-              if (id >= 1 && id <= 55) newBelt[idx] = { markId: id, rank: r };
-            }
-          });
-          setBuildSlots((prev) => ({ ...prev, [activeBuildSlot]: newBelt }));
-          showToast("Imported build loadout from deep link!");
-        } catch {
-          // ignore
-        }
-      }
+    const parsed = parseRenownDeepLink(window.location.hash);
+    if (parsed.capacity) setBeltCapacityState(parsed.capacity);
+    if (parsed.ownedMarks) {
+      setOwnedMarks(parsed.ownedMarks);
+      setViewMode("owned");
     }
+    if (parsed.belt) {
+      setBuildSlots((prev) => ({ ...prev, [activeBuildSlot]: parsed.belt! }));
+    }
+    if (parsed.toast) showToast(parsed.toast);
   }, []);
 
-  const checkEligibility = (mark: MarkItem, rank: number, targetSlotIdx?: number): EligibilityResult => {
-    return checkMarkEligibility(currentBelt, mark, rank, targetSlotIdx, viewMode, ownedMarks);
-  };
+  const checkEligibility = (
+    mark: MarkItem,
+    rank: number,
+    targetSlotIdx?: number
+  ): EligibilityResult =>
+    checkMarkEligibility(
+      currentBelt,
+      mark,
+      rank,
+      targetSlotIdx,
+      viewMode,
+      ownedMarks,
+      beltCapacity
+    );
 
   const equipMark = (markId: number, targetSlotIdx?: number, forcedRank?: number) => {
     const mark = ALL_MARKS.find((m) => m.id === markId);
     if (!mark) return;
 
-    const rankToUse = forcedRank || (viewMode === "owned" ? ownedMarks[markId] || 1 : markRanks[markId] || 1);
+    const rankToUse =
+      forcedRank || (viewMode === "owned" ? ownedMarks[markId] || 1 : markRanks[markId] || 1);
 
-    // Rule: Keystone Anchor (Slot 5 / index 4) is STRICTLY for Keystones
     let destIdx = targetSlotIdx;
     if (mark.keystone) {
       if (destIdx !== undefined && destIdx !== KEYSTONE_SLOT_INDEX) {
-        showToast("Keystones must be equipped in the Keystone Anchor (Slot 5)!");
+        showToast("Keystones socket directly into the Center Keystone Anchor (Slot 5)!");
       }
       destIdx = KEYSTONE_SLOT_INDEX;
     } else {
       if (destIdx === KEYSTONE_SLOT_INDEX) {
         audio.play("error");
-        showToast("Slot 5 is the dedicated Keystone Anchor! Only Keystone marks can be socketed here.");
+        showToast("Center Slot 5 is the dedicated Keystone Anchor! Only Keystone marks socket here.");
         return;
       }
       if (destIdx === undefined) {
-        // find first empty passive slot (not index 4)
         destIdx = currentBelt.findIndex((s, i) => s === null && i !== KEYSTONE_SLOT_INDEX);
       }
     }
 
-    if (destIdx === -1 || destIdx === undefined || destIdx >= 10) {
+    if (destIdx === -1 || destIdx === undefined || destIdx >= BELT_TOTAL_SLOTS) {
       audio.play("error");
-      showToast("All available passive sockets in belt are occupied! Unequip a mark first.");
+      showToast("All 8 passive sockets in belt are occupied! Unequip a mark first.");
       return;
     }
 
     const check = checkEligibility(mark, rankToUse, destIdx);
     if (!check.eligible && check.actionType === "disabled") {
       audio.play("error");
-      showToast(check.reason || "Cannot equip: violates loadout rules!");
+      showToast(check.reason || "Cannot equip: violates belt rules!");
       return;
     }
 
     const tentative = [...currentBelt];
-
-    // If mark is active, unequip any existing active mark in another slot
     if (mark.active) {
       const existingActiveIdx = tentative.findIndex((s) => {
         const m = s ? ALL_MARKS.find((x) => x.id === s.markId) : null;
@@ -207,18 +183,16 @@ export function useRenownDeck() {
       }
     }
 
-    // Remove if already in another slot
     const existingIdx = tentative.findIndex((s) => s?.markId === markId);
     if (existingIdx !== -1 && existingIdx !== destIdx) {
       tentative[existingIdx] = null;
     }
 
     tentative[destIdx] = { markId, rank: rankToUse };
-
     setBuildSlots((prev) => ({ ...prev, [activeBuildSlot]: tentative }));
     if (mark.keystone) {
       audio.play("success");
-      showToast(`Socketed Keystone: ${mark.name} (R${rankToUse})`);
+      showToast(`Socketed Zero-Notch Keystone: ${mark.name} (R${rankToUse})`);
     } else {
       audio.play("equip");
       showToast(`Equipped ${mark.name} (R${rankToUse}) in Slot ${destIdx + 1}`);
@@ -252,19 +226,17 @@ export function useRenownDeck() {
     const mark = ALL_MARKS.find((m) => m.id === item.markId);
     if (!mark) return;
 
-    const oldCost = getEffectiveCost(mark, item.rank);
-    const newCost = getEffectiveCost(mark, newRank);
-    const costDiff = newCost - oldCost;
-
+    const costDiff = getEffectiveCost(mark, newRank) - getEffectiveCost(mark, item.rank);
     if (costDiff > remainingNotches) {
       audio.play("error");
-      showToast(`Cannot rank up: Requires ${costDiff} more Notch, but only ${remainingNotches} available!`);
+      showToast(
+        `Cannot lower rank: Requires ${costDiff} more Notch, but only ${remainingNotches} available!`
+      );
       return;
     }
 
     const tentative = [...currentBelt];
     tentative[slotIdx] = { markId: item.markId, rank: newRank };
-
     setBuildSlots((prev) => ({ ...prev, [activeBuildSlot]: tentative }));
     audio.play("rank");
   };
@@ -279,35 +251,25 @@ export function useRenownDeck() {
         return;
       }
     }
-
     setMarkRanks((prev) => ({ ...prev, [markId]: rank }));
-
     const equippedIdx = currentBelt.findIndex((s) => s?.markId === markId);
-    if (equippedIdx !== -1) {
-      setSlotRank(equippedIdx, rank);
-    } else {
-      audio.play("click");
-    }
+    if (equippedIdx !== -1) setSlotRank(equippedIdx, rank);
+    else audio.play("click");
   };
 
   const handleCardToggleEquip = (mark: MarkItem) => {
-    const isEquipped = currentBelt.some((s) => s?.markId === mark.id);
-    if (isEquipped) {
-      const idx = currentBelt.findIndex((s) => s?.markId === mark.id);
-      if (idx !== -1) unequipSlot(idx);
-    } else {
-      equipMark(mark.id);
-    }
+    const idx = currentBelt.findIndex((s) => s?.markId === mark.id);
+    if (idx !== -1) unequipSlot(idx);
+    else equipMark(mark.id);
   };
 
   const handleDragStartCard = (e: React.DragEvent, markId: number) => {
     const m = ALL_MARKS.find((x) => x.id === markId);
-    const cost = m ? getEffectiveCost(m, markRanks[markId] || 1) : 1;
     const info: DraggingInfo = {
       type: "library",
       markId,
       isKeystone: Boolean(m?.keystone),
-      cost
+      cost: m ? getEffectiveCost(m, markRanks[markId] || 1) : 1
     };
     dragSourceRef.current = info;
     setDraggingInfo(info);
@@ -318,13 +280,12 @@ export function useRenownDeck() {
   const handleDragStartSocket = (e: React.DragEvent, slotIdx: number) => {
     const item = currentBelt[slotIdx];
     const m = item ? ALL_MARKS.find((x) => x.id === item.markId) : null;
-    const cost = (item && m) ? getEffectiveCost(m, item.rank) : 0;
     const info: DraggingInfo = {
       type: "socket",
       slotIdx,
       markId: item?.markId,
       isKeystone: Boolean(m?.keystone),
-      cost
+      cost: item && m ? getEffectiveCost(m, item.rank) : 0
     };
     dragSourceRef.current = info;
     setDraggingInfo(info);
@@ -356,7 +317,6 @@ export function useRenownDeck() {
       const fromIdx = source.slotIdx;
       if (fromIdx === targetSlotIdx) return;
 
-      // Slot role validation for Keystone Anchor (Slot 5 / index 4)
       if (fromIdx === KEYSTONE_SLOT_INDEX || targetSlotIdx === KEYSTONE_SLOT_INDEX) {
         const fromItem = currentBelt[fromIdx];
         const targetItem = currentBelt[targetSlotIdx];
@@ -365,14 +325,17 @@ export function useRenownDeck() {
 
         if (targetSlotIdx === KEYSTONE_SLOT_INDEX && fromMark && !fromMark.keystone) {
           audio.play("error");
-          showToast("Slot 5 is the Keystone Anchor! Only Keystones can be socketed here.");
+          showToast("Center Slot 5 is the Keystone Anchor! Only Keystones can be socketed here.");
           dragSourceRef.current = null;
           return;
         }
-
-        if (fromIdx === KEYSTONE_SLOT_INDEX && targetSlotIdx !== KEYSTONE_SLOT_INDEX && (!targetMark || !targetMark.keystone)) {
+        if (
+          fromIdx === KEYSTONE_SLOT_INDEX &&
+          targetSlotIdx !== KEYSTONE_SLOT_INDEX &&
+          (!targetMark || !targetMark.keystone)
+        ) {
           audio.play("error");
-          showToast("Keystones can only be equipped in the Keystone Anchor (Slot 5).");
+          showToast("Keystones can only be socketed in the Center Keystone Anchor (Slot 5).");
           dragSourceRef.current = null;
           return;
         }
@@ -382,19 +345,17 @@ export function useRenownDeck() {
       const temp = tentative[targetSlotIdx];
       tentative[targetSlotIdx] = tentative[fromIdx];
       tentative[fromIdx] = temp;
-
       setBuildSlots((prev) => ({ ...prev, [activeBuildSlot]: tentative }));
       audio.play("equip");
       showToast(`Swapped with Slot ${targetSlotIdx + 1}`);
     }
-
     dragSourceRef.current = null;
   };
 
   const filteredMarks = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
     return ALL_MARKS.filter((m) => {
       const matchDomain = activeDomain === "ALL" || m.domain === activeDomain;
-      const q = searchQuery.toLowerCase().trim();
       return (
         matchDomain &&
         (!q ||
@@ -415,101 +376,48 @@ export function useRenownDeck() {
 
   const handleCopyShareUrl = () => {
     const tokens = currentBelt.map((s) => (s ? `${s.markId}:${s.rank}` : "0")).join(",");
-    const url = `${window.location.origin}${window.location.pathname}#renown?b=${tokens}`;
+    const url = `${window.location.origin}${window.location.pathname}#renown?c=${beltCapacity}&b=${tokens}`;
     navigator.clipboard.writeText(url);
     audio.play("copy");
     showToast("Shareable build URL copied to clipboard!");
   };
 
   const handleImportCollection = (importStr: string) => {
-    try {
-      let str = importStr.trim();
-      if (str.includes("/renown export")) str = str.replace("/renown export", "").trim();
-      if (str.includes("#owned=")) str = str.split("#owned=")[1].split("&")[0];
-
-      const pairs = str.split(",");
-      const parsed: Record<number, number> = {};
-      pairs.forEach((p) => {
-        const [idStr, rStr] = p.split(":");
-        const id = parseInt(idStr.trim(), 10);
-        const r = parseInt(rStr ? rStr.trim() : "1", 10) || 1;
-        if (id >= 1 && id <= 55) parsed[id] = Math.min(Math.max(r, 1), 3);
-      });
-
-      if (Object.keys(parsed).length === 0) {
-        audio.play("error");
-        showToast("No valid marks found in imported string!");
-        return;
-      }
-
-      setOwnedMarks(parsed);
-      setViewMode("owned");
-      audio.play("success");
-      showToast(`Successfully imported ${Object.keys(parsed).length} owned marks!`);
-    } catch {
+    const parsed = parseImportedCollection(importStr);
+    if (!parsed) {
       audio.play("error");
-      showToast("Malformed import string! Use format: 1:2,2:1,13:3...");
+      showToast("Malformed import string! Use format: 1:2,3:1,14:2,45:1...");
+      return;
     }
+    setOwnedMarks(parsed);
+    setViewMode("owned");
+    audio.play("success");
+    showToast(`Successfully imported ${Object.keys(parsed).length} owned marks!`);
   };
 
   const handleQuickLoadStarter = () => {
-    const starter: Record<number, number> = {};
-    for (let i = 1; i <= 15; i++) starter[i] = 1;
-    starter[1] = 2;
-    starter[13] = 2;
-    starter[22] = 2;
-    starter[36] = 1;
-    setOwnedMarks(starter);
+    setOwnedMarks(buildDay1StarterCollection());
+    setBeltCapacityState(6);
     setViewMode("owned");
     audio.play("success");
-    showToast("Loaded Starter Pack (15 Marks unlocked)!");
+    showToast("Loaded Day-1 Starter Pack (6-Notch Belt + 17 Marks)!");
   };
 
   const handleUnlockAll = () => {
-    const all: Record<number, number> = {};
-    for (let i = 1; i <= 55; i++) all[i] = 3;
-    setOwnedMarks(all);
+    setOwnedMarks(buildMaxSovereignCollection());
+    setBeltCapacityState(8);
     setViewMode("owned");
     audio.play("success");
-    showToast("Unlocked all 55 Marks at Rank 3!");
+    showToast("Unlocked all 55 Marks at Rank 3 + 8-Notch Sovereign Belt!");
   };
 
-  const statsBonus = useMemo<CombatStats>(() => {
-    let bonusHp = 0;
-    let reachBonus = 0;
-    let toughnessBonus = 0;
-    let deflectChance = 0;
-    let maceExecute = 0;
-    let safeFall = 0;
-
-    equippedItems.forEach((item) => {
-      const m = ALL_MARKS.find((x) => x.id === item.markId);
-      if (!m) return;
-      if (m.id === 36) bonusHp += item.rank === 1 ? 2.0 : item.rank === 2 ? 3.0 : 4.0;
-      if (m.id === 55) bonusHp += 4.0;
-      if (m.id === 47) reachBonus += item.rank === 1 ? 0.35 : 0.45;
-      if (m.id === 4 && item.rank === 3) toughnessBonus += 0.5;
-      if (m.id === 22) toughnessBonus += item.rank === 1 ? 1.0 : item.rank === 2 ? 1.5 : 2.5;
-      if (m.id === 21) deflectChance += item.rank === 1 ? 15 : item.rank === 2 ? 25 : 40;
-      if (m.id === 41) deflectChance += item.rank === 1 ? 50 : item.rank === 2 ? 75 : 100;
-      if (m.id === 33) maceExecute += item.rank === 1 ? 15 : item.rank === 2 ? 25 : 35;
-      if (m.id === 5) safeFall += item.rank === 1 ? 3 : item.rank === 2 ? 5 : 7;
-    });
-
-    return {
-      bonusHp,
-      totalHp: 20 + bonusHp,
-      reach: 3.0 + reachBonus,
-      reachBonus,
-      toughness: toughnessBonus,
-      deflect: deflectChance,
-      maceExecute,
-      safeFall
-    };
-  }, [equippedItems]);
+  const statsBonus = useMemo<CombatStats>(() => computeBeltStats(equippedItems), [equippedItems]);
 
   const clearCurrentBelt = () => {
-    setBuildSlots((prev) => ({ ...prev, [activeBuildSlot]: new Array(10).fill(null) }));
+    setBuildSlots((prev) => ({
+      ...prev,
+      [activeBuildSlot]: new Array(BELT_TOTAL_SLOTS).fill(null)
+    }));
     audio.play("unequip");
     showToast("Cleared equipped loadout!");
   };
@@ -520,6 +428,8 @@ export function useRenownDeck() {
     handleToggleSfx,
     activeBuildSlot,
     setActiveBuildSlot,
+    beltCapacity,
+    setBeltCapacity,
     buildSlots,
     currentBelt,
     clearCurrentBelt,

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { X, Search, Sparkles } from "lucide-react";
 import { ALL_MARKS, MarkItem } from "../data/renownData";
 import { EquippedSlot } from "./RenownBelt";
-import { KEYSTONE_SLOT_INDEX, checkMarkEligibility } from "./deckValidation";
+import { BeltCapacityTier, KEYSTONE_SLOT_INDEX, checkMarkEligibility } from "./deckValidation";
 import { SlidingSegmented } from "./SlidingSegmented";
 
 interface QuickPickerModalProps {
@@ -15,6 +15,7 @@ interface QuickPickerModalProps {
   currentBelt: (EquippedSlot | null)[];
   getEffectiveCost: (mark: MarkItem, rank: number) => number;
   remainingNotches: number;
+  beltCapacity: BeltCapacityTier;
 }
 
 export const QuickPickerModal: React.FC<QuickPickerModalProps> = ({
@@ -26,7 +27,8 @@ export const QuickPickerModal: React.FC<QuickPickerModalProps> = ({
   markRanks,
   currentBelt,
   getEffectiveCost,
-  remainingNotches
+  remainingNotches,
+  beltCapacity
 }) => {
   const [search, setSearch] = useState<string>("");
   const [modalDomain, setModalDomain] = useState<string>("ALL");
@@ -65,14 +67,14 @@ export const QuickPickerModal: React.FC<QuickPickerModalProps> = ({
               {isKeystoneSlot && <Sparkles size={16} color="var(--accent-gold)" />}
               <h3 style={{ fontSize: "14px", fontWeight: 700, color: "#FFFFFF" }}>
                 {isKeystoneSlot
-                  ? "Select Keystone Mark (Slot 5 Anchor)"
+                  ? "Select Zero-Notch Keystone (Center Anchor)"
                   : `Select Passive Mark for Slot ${slotIdx + 1}`}
               </h3>
             </div>
             <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "2px" }}>
               {isKeystoneSlot
-                ? "Keystones provide build-defining passives. Maximum 1 Keystone per loadout."
-                : `${remainingNotches} Notches capacity available (Max 10). Non-keystone passives only.`}
+                ? "12 Domain-Balanced Keystones (3 per domain, 0 Notches). Leaving Slot 5 empty grants +1 Purist Notch."
+                : `${remainingNotches} Passive Notches available. Max 4 Offense Notches.`}
             </div>
           </div>
           <button type="button" onClick={onClose} style={{ color: "var(--text-muted)" }} aria-label="Close modal">
@@ -149,7 +151,8 @@ export const QuickPickerModal: React.FC<QuickPickerModalProps> = ({
                 preferredRank,
                 slotIdx,
                 viewMode,
-                ownedMarks
+                ownedMarks,
+                beltCapacity
               );
 
               const isCurrentlyInSlot = currentBelt[slotIdx]?.markId === m.id;

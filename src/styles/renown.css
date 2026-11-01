@@ -191,15 +191,15 @@
   background: #EF4444;
 }
 
-/* Clash Royale Slots */
+/* Symmetrical 9-Slot Belt (4 Passive + 1 Center Keystone Anchor + 4 Passive) */
 .renown-slots-grid {
   display: grid;
-  grid-template-columns: repeat(10, 1fr);
+  grid-template-columns: repeat(9, 1fr);
   gap: 10px;
 }
 
 @media (max-width: 1024px) {
-  .renown-slots-grid { grid-template-columns: repeat(5, 1fr); }
+  .renown-slots-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 .renown-slot {
@@ -646,7 +646,7 @@
     gap: 8px;
   }
   .renown-slots-grid {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 6px;
   }
   .renown-slot {
@@ -680,8 +680,8 @@
 
 @media (max-width: 480px) {
   .renown-slots-grid {
-    grid-template-columns: repeat(5, 1fr);
-    gap: 4px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
   }
   .renown-slot {
     min-height: 54px;
