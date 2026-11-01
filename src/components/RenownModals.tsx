@@ -41,6 +41,7 @@ export const CardDetailSheet: React.FC<CardDetailSheetProps> = ({
 
   const rank = getRankForMark(mark.id);
   const effCost = getEffectiveCost(mark, rank);
+  const isDiscounted = !mark.keystone && mark.cost >= 3 && rank === 3;
   const isEquipped = currentBelt.some((s) => s?.markId === mark.id);
   const isOwned = viewMode !== "owned" || Boolean(ownedMarks[mark.id]);
   const direct = checkMarkEligibility(
@@ -67,7 +68,7 @@ export const CardDetailSheet: React.FC<CardDetailSheetProps> = ({
       ? "Socket Keystone (0N)"
       : `Use in Deck (${effCost}N)`
     : canSwap
-    ? `Select Slot to Swap (${mark.keystone ? "0N" : `${effCost}N`})`
+    ? `Select Card to Swap (${mark.keystone ? "0N" : `${effCost}N`})`
     : direct.actionLabel;
 
   return (
@@ -82,42 +83,48 @@ export const CardDetailSheet: React.FC<CardDetailSheetProps> = ({
         <div className="cr-sheet-grabber" aria-hidden="true" />
 
         <div className="cr-detail-header">
-          <div className={`cr-detail-art rarity-${mark.tier.toLowerCase()}`}>
+          <div className="cr-detail-art">
             <img
               src={`assets/marks/mark_${String(mark.id).padStart(2, "0")}.png`}
               alt={mark.name}
               draggable={false}
             />
-            <span className={`cr-cost-gem ${mark.keystone ? "is-keystone-gem" : ""}`}>
+            <span
+              className={`cr-cost-gem ${
+                mark.keystone || isDiscounted ? "is-gold-text" : ""
+              }`}
+            >
               {mark.keystone ? "0N" : `${effCost}N`}
             </span>
           </div>
 
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-              <h3 style={{ fontSize: "17px", fontWeight: 700, color: "var(--text-primary)" }}>
-                {mark.name}
-              </h3>
+          <div className="cr-detail-heading-group">
+            <div className="cr-detail-title-row">
+              <h3 className="cr-detail-title">{mark.name}</h3>
               {mark.keystone && <Crown size={15} color="var(--accent-gold)" />}
               {mark.active && <Zap size={15} color="var(--accent-gold)" />}
             </div>
-            <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "2px" }}>
-              {mark.tier} · {mark.domain} · {mark.keystone ? "Zero-Notch Keystone" : `${effCost} Notch${effCost === 1 ? "" : "es"}`}
+            <div className="cr-detail-sub">
+              {mark.tier} · {mark.domain} ·{" "}
+              {mark.keystone
+                ? "Zero-Notch Keystone"
+                : `${effCost} Notch${effCost === 1 ? "" : "es"}`}
             </div>
-            <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>
-              Unlock: {mark.advancement}
-            </div>
+            <div className="cr-detail-adv">Unlock: {mark.advancement}</div>
           </div>
 
-          <button type="button" className="cr-close-btn" onClick={onClose} aria-label="Close card info">
-            <X size={18} />
+          <button
+            type="button"
+            className="cr-close-btn"
+            onClick={onClose}
+            aria-label="Close card info"
+          >
+            <X size={17} />
           </button>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
-          <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)" }}>
-            Preview Mastery Rank
-          </span>
+        <div className="cr-detail-rank-bar">
+          <span className="cr-detail-rank-label">Preview Mastery Rank</span>
           <SlidingSegmented
             options={[
               { id: 1, label: "Rank I" },
@@ -138,14 +145,9 @@ export const CardDetailSheet: React.FC<CardDetailSheetProps> = ({
             return (
               <div
                 key={idx}
-                className="ios-hairline-row"
-                style={{
-                  fontSize: "12px",
-                  lineHeight: 1.45,
-                  color: isSelectedRank ? "var(--text-primary)" : "var(--text-secondary)",
-                  fontWeight: isSelectedRank ? 600 : 400,
-                  background: isSelectedRank ? "rgba(245, 158, 11, 0.08)" : "transparent"
-                }}
+                className={`ios-hairline-row cr-rank-spec-row ${
+                  isSelectedRank ? "is-active-rank" : ""
+                }`}
               >
                 {line}
               </div>
@@ -155,8 +157,9 @@ export const CardDetailSheet: React.FC<CardDetailSheetProps> = ({
 
         <button
           type="button"
-          className={`renown-btn ${isEquipped ? "cr-btn-danger" : "renown-btn-gold"}`}
-          style={{ width: "100%", justifyContent: "center", padding: "11px 16px", fontSize: "13px" }}
+          className={`renown-btn cr-sheet-cta ${
+            isEquipped ? "cr-btn-danger" : "renown-btn-gold"
+          }`}
           disabled={!isOwned && !isEquipped}
           onClick={() => {
             onUseCard(mark, rank);
@@ -200,6 +203,7 @@ export const QuickPickerModal: React.FC<QuickPickerModalProps> = ({
 
   if (slotIdx === null) return null;
   const isKeystoneSlot = slotIdx === KEYSTONE_SLOT_INDEX;
+  const passiveOrdinal = slotIdx < KEYSTONE_SLOT_INDEX ? slotIdx + 1 : slotIdx;
 
   const marksToDisplay = ALL_MARKS.filter((m) => {
     if (isKeystoneSlot && !m.keystone) return false;
@@ -219,24 +223,24 @@ export const QuickPickerModal: React.FC<QuickPickerModalProps> = ({
     <div className="renown-modal-backdrop" onClick={onClose}>
       <div className="cr-detail-sheet cr-picker-sheet" onClick={(e) => e.stopPropagation()}>
         <div className="cr-sheet-grabber" aria-hidden="true" />
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px" }}>
+        <div className="cr-sheet-top-row">
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <div className="cr-detail-title-row">
               {isKeystoneSlot && <Sparkles size={15} color="var(--accent-gold)" />}
-              <h3 style={{ fontSize: "16px", fontWeight: 700, color: "var(--text-primary)" }}>
+              <h3 className="cr-detail-title">
                 {isKeystoneSlot
                   ? "Select Zero-Notch Keystone"
-                  : `Select Card for Slot ${slotIdx < KEYSTONE_SLOT_INDEX ? slotIdx + 1 : slotIdx}`}
+                  : `Select Card for Passive Socket ${passiveOrdinal}`}
               </h3>
             </div>
-            <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "2px" }}>
+            <div className="cr-detail-sub">
               {isKeystoneSlot
-                ? "12 Keystones (3 per domain, 0N). Leaving Slot 5 empty grants +1N Purist."
+                ? "12 Keystones (3 per domain, 0N). Leaving Center Anchor empty grants +1N Purist."
                 : `${remainingNotches} Passive Notches free · Max 4 Offense Notches`}
             </div>
           </div>
           <button type="button" className="cr-close-btn" onClick={onClose} aria-label="Close picker">
-            <X size={18} />
+            <X size={17} />
           </button>
         </div>
 
@@ -256,7 +260,7 @@ export const QuickPickerModal: React.FC<QuickPickerModalProps> = ({
           </div>
         )}
 
-        <div className="cr-search-box" style={{ width: "100%" }}>
+        <div className="cr-search-box is-full-width">
           <Search size={14} className="cr-search-icon" />
           <input
             type="text"
@@ -271,6 +275,7 @@ export const QuickPickerModal: React.FC<QuickPickerModalProps> = ({
           {marksToDisplay.map((m) => {
             const rank = getRankForMark(m.id);
             const cost = getEffectiveCost(m, rank);
+            const isDiscounted = !m.keystone && m.cost >= 3 && rank === 3;
             const check = checkMarkEligibility(
               currentBelt,
               m,
@@ -281,17 +286,17 @@ export const QuickPickerModal: React.FC<QuickPickerModalProps> = ({
               beltCapacity
             );
             const isEquippedHere = currentBelt[slotIdx]?.markId === m.id;
-            const isEquippedElsewhere = !isEquippedHere && currentBelt.some((s) => s?.markId === m.id);
-            const disabled = (!check.eligible && check.actionType === "disabled") || isEquippedElsewhere;
+            const isEquippedElsewhere =
+              !isEquippedHere && currentBelt.some((s) => s?.markId === m.id);
+            const disabled =
+              (!check.eligible && check.actionType === "disabled") || isEquippedElsewhere;
 
             return (
               <button
                 key={m.id}
                 type="button"
                 disabled={disabled}
-                className={`cr-collectible-card rarity-${m.tier.toLowerCase()} ${
-                  disabled ? "is-unowned" : ""
-                }`}
+                className={`cr-collectible-card ${disabled ? "is-unowned" : ""}`}
                 onClick={() => {
                   if (!disabled) {
                     onSelectMark(m.id, slotIdx, rank);
@@ -299,7 +304,11 @@ export const QuickPickerModal: React.FC<QuickPickerModalProps> = ({
                   }
                 }}
               >
-                <span className={`cr-cost-gem ${m.keystone ? "is-keystone-gem" : ""}`}>
+                <span
+                  className={`cr-cost-gem ${
+                    m.keystone || isDiscounted ? "is-gold-text" : ""
+                  }`}
+                >
                   {m.keystone ? "0N" : `${cost}N`}
                 </span>
                 <div className="cr-card-art-stage">
@@ -349,18 +358,16 @@ export const ImportModal: React.FC<ImportModalProps> = ({
     <div className="renown-modal-backdrop" onClick={onClose}>
       <div className="cr-detail-sheet" onClick={(e) => e.stopPropagation()}>
         <div className="cr-sheet-grabber" aria-hidden="true" />
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h3 style={{ fontSize: "16px", fontWeight: 700, color: "var(--text-primary)" }}>
-            Import Owned Collection
-          </h3>
+        <div className="cr-sheet-top-row">
+          <h3 className="cr-detail-title">Import Owned Collection</h3>
           <button type="button" className="cr-close-btn" onClick={onClose} aria-label="Close">
-            <X size={18} />
+            <X size={17} />
           </button>
         </div>
 
-        <p style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.5 }}>
-          Run <code style={{ color: "var(--accent-gold)" }}>/renown export</code> in-game and paste
-          your string below to filter cards by your unlocked Mastery ranks.
+        <p className="cr-import-help">
+          Run <code className="cr-inline-code">/renown export</code> in-game and paste your string
+          below to filter cards by your unlocked Mastery ranks.
         </p>
 
         <textarea
@@ -368,22 +375,11 @@ export const ImportModal: React.FC<ImportModalProps> = ({
           placeholder="Example: 1:2,3:2,14:2,30:1,45:1,52:1"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          style={{
-            width: "100%",
-            background: "var(--tier-0-recessed)",
-            border: "1px solid var(--border-subtle)",
-            borderRadius: "10px",
-            padding: "10px 12px",
-            color: "var(--text-primary)",
-            fontSize: "12px",
-            fontFamily: "var(--font-mono)",
-            outline: "none",
-            resize: "none"
-          }}
+          className="cr-import-textarea"
         />
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+        <div className="cr-import-footer">
+          <div className="cr-import-presets">
             <button
               type="button"
               className="renown-btn"

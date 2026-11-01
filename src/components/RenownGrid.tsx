@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import {
   Crown,
   Zap,
@@ -51,6 +51,11 @@ interface RenownGridProps {
   shouldSuppressClick: () => boolean;
 }
 
+interface TrayPlacement {
+  align: "left" | "center" | "right";
+  dir: "down" | "up";
+}
+
 const SORT_LABELS: Record<SortMode, string> = {
   cost: "By Notch",
   tier: "By Rarity",
@@ -82,9 +87,33 @@ export const RenownGrid: React.FC<RenownGridProps> = ({
   onStartCardPointerDrag,
   shouldSuppressClick
 }) => {
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  const [trayPlacement, setTrayPlacement] = useState<TrayPlacement>({
+    align: "center",
+    dir: "down"
+  });
+
+  const computeAndSelectCard = (markId: number, cardEl: HTMLElement) => {
+    const rect = cardEl.getBoundingClientRect();
+    const gridRect = gridRef.current?.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+
+    let align: TrayPlacement["align"] = "center";
+    if (gridRect) {
+      if (centerX - gridRect.left < 96) align = "left";
+      else if (gridRect.right - centerX < 96) align = "right";
+    }
+
+    const bottomReserve = window.innerWidth <= 768 ? 195 : 145;
+    const dir: TrayPlacement["dir"] =
+      window.innerHeight - rect.bottom < bottomReserve && rect.top > 150 ? "up" : "down";
+
+    setTrayPlacement({ align, dir });
+    onSelectCollectionCard(markId);
+  };
+
   return (
     <section className="cr-collection-section" aria-label="Card Collection">
-      {/* Collection Filter & Search Toolbar */}
       <div className="cr-collection-toolbar">
         <div className="cr-domain-scroll">
           <SlidingSegmented
@@ -123,6 +152,8 @@ export const RenownGrid: React.FC<RenownGridProps> = ({
           <div className="cr-search-box">
             <Search size={14} className="cr-search-icon" />
             <input
+              id="renown-card-search"
+              name="cardSearch"
               type="text"
               placeholder="Search cards..."
               value={searchQuery}
@@ -144,8 +175,7 @@ export const RenownGrid: React.FC<RenownGridProps> = ({
         </div>
       </div>
 
-      {/* Clash Royale Collectible Portrait Card Grid */}
-      <div className="cr-collection-grid">
+      <div className="cr-collection-grid" ref={gridRef}>
         {marks.map((m) => {
           const isEquipped = currentBelt.some((s) => s?.markId === m.id);
           const currentRank = getRankForMark(m.id);
@@ -177,20 +207,18 @@ export const RenownGrid: React.FC<RenownGridProps> = ({
           return (
             <div
               key={m.id}
-              className={[
-                "cr-card-wrapper",
-                isSelected ? "is-expanded" : ""
-              ]
+              className={["cr-card-wrapper", isSelected ? "is-expanded" : ""]
                 .filter(Boolean)
                 .join(" ")}
             >
               <div
                 role="button"
                 tabIndex={0}
-                aria-label={`${m.name}, ${m.keystone ? "0 Notches Keystone" : `${effCost} Notches`}`}
+                aria-label={`${m.name}, ${
+                  m.keystone ? "0 Notches Keystone" : `${effCost} Notches`
+                }`}
                 className={[
                   "cr-collectible-card",
-                  `rarity-${m.tier.toLowerCase()}`,
                   isEquipped ? "is-in-deck" : "",
                   isSelected ? "is-selected" : "",
                   !isOwned ? "is-unowned" : "",
@@ -203,9 +231,9 @@ export const RenownGrid: React.FC<RenownGridProps> = ({
                     onStartCardPointerDrag(e, m, currentRank, effCost);
                   }
                 }}
-                onClick={() => {
+                onClick={(e) => {
                   if (shouldSuppressClick()) return;
-                  onSelectCollectionCard(m.id);
+                  computeAndSelectCard(m.id, e.currentTarget);
                 }}
                 onDoubleClick={() => {
                   if (isOwned) onUseCard(m);
@@ -213,23 +241,21 @@ export const RenownGrid: React.FC<RenownGridProps> = ({
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    onSelectCollectionCard(m.id);
+                    computeAndSelectCard(m.id, e.currentTarget);
                   }
                 }}
               >
-                {/* Top-Left Notch Elixir Cost Gem */}
                 <span
                   className={`cr-cost-gem ${
-                    m.keystone ? "is-keystone-gem" : isDiscounted ? "is-discounted-gem" : ""
+                    m.keystone || isDiscounted ? "is-gold-text" : ""
                   }`}
                 >
                   {m.keystone ? "0N" : `${effCost}N`}
                 </span>
 
-                {/* Single clean top-right role/deck indicator */}
                 {isEquipped ? (
                   <span className="cr-equipped-check" title="Equipped in Battle Deck">
-                    <Check size={11} strokeWidth={3} />
+                    <Check size={11} strokeWidth={2.75} />
                   </span>
                 ) : !isOwned ? (
                   <span className="cr-corner-icon" title="Locked in Collection">
@@ -245,7 +271,6 @@ export const RenownGrid: React.FC<RenownGridProps> = ({
                   </span>
                 ) : null}
 
-                {/* Pixel-Art Mark Emblem */}
                 <div className="cr-card-art-stage">
                   <img
                     src={`assets/marks/mark_${String(m.id).padStart(2, "0")}.png`}
@@ -256,12 +281,14 @@ export const RenownGrid: React.FC<RenownGridProps> = ({
                   />
                 </div>
 
-                {/* Card Title + Mastery Rank Bar */}
                 <div className="cr-card-meta">
                   <div className="cr-card-title">{m.name}</div>
                   <div className="cr-card-level-row">
                     <span className="cr-card-domain">{m.domain}</span>
-                    <div className="cr-rank-pips" aria-label={`Rank ${currentRank}`}>
+                    <div
+                      className={`cr-rank-pips ${currentRank === 3 ? "is-max-rank" : ""}`}
+                      aria-label={`Rank ${currentRank}`}
+                    >
                       {[1, 2, 3].map((r) => (
                         <span
                           key={r}
@@ -273,10 +300,9 @@ export const RenownGrid: React.FC<RenownGridProps> = ({
                 </div>
               </div>
 
-              {/* Clash Royale Tap-to-Expand Floating Action Tray */}
               {isSelected && (
                 <div
-                  className="cr-card-action-tray"
+                  className={`cr-card-action-tray align-${trayPlacement.align} open-${trayPlacement.dir}`}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="cr-tray-rank-row">
@@ -295,9 +321,15 @@ export const RenownGrid: React.FC<RenownGridProps> = ({
                   <div className="cr-tray-buttons">
                     <button
                       type="button"
-                      className={`cr-tray-use-btn ${
-                        isEquipped ? "is-remove" : !isOwned ? "is-disabled" : ""
-                      }`}
+                      className={[
+                        "cr-tray-use-btn",
+                        isEquipped ? "is-remove" : "",
+                        (!isOwned && !isEquipped) || primaryCtaLabel === "Locked"
+                          ? "is-disabled"
+                          : ""
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
                       disabled={!isOwned && !isEquipped}
                       onClick={() => onUseCard(m)}
                     >

@@ -1,29 +1,21 @@
 import React, { useState, useEffect, useRef } from "react";
-import {
-  BookOpen,
-  Share2,
-  Download,
-  Volume2,
-  VolumeX,
-  Copy,
-  Sparkles,
-  Swords,
-  SlidersHorizontal,
-  Crown,
-  ArrowUp
-} from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { ALL_MARKS } from "../data/renownData";
-import { KEYSTONE_SLOT_INDEX } from "./deckValidation";
 import { RenownBelt } from "./RenownBelt";
 import { RenownGrid } from "./RenownGrid";
 import { RenownInspector } from "./RenownInspector";
 import { CodexGuideContent, DrawerTab } from "./RenownDrawer";
 import { CardDetailSheet, QuickPickerModal, ImportModal } from "./RenownModals";
+import {
+  DragGhostCard,
+  MastheadHeader,
+  MobileBottomNav,
+  MobileTab,
+  StickyMiniDeck
+} from "./RenownChrome";
 import { SlideOverDrawer } from "./ui/SlideOverDrawer";
 import { useRenownDeck, SortMode as DeckSortMode } from "./useRenownDeck";
 import { usePointerDeckDrag } from "./usePointerDeckDrag";
-
-type MobileTab = "deck" | "stats" | "guide";
 
 export const RenownView: React.FC = () => {
   const {
@@ -99,21 +91,18 @@ export const RenownView: React.FC = () => {
     const el = deckAnchorRef.current;
     if (!el || typeof IntersectionObserver === "undefined") return;
     const obs = new IntersectionObserver(
-      ([entry]) => {
-        setShowStickyMiniDeck(!entry.isIntersecting);
-      },
+      ([entry]) => setShowStickyMiniDeck(!entry.isIntersecting),
       { threshold: 0.08 }
     );
     obs.observe(el);
     return () => obs.disconnect();
   }, [mobileTab]);
 
-  // Dismiss selected card tray when clicking empty background
   useEffect(() => {
-    if (!selectedCard) return;
+    if (!selectedCard && !pendingSwap) return;
     const onDocClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement | null;
-      if (!target) return;
+      if (!target || !selectedCard) return;
       if (
         target.closest(".cr-card-wrapper") ||
         target.closest(".cr-deck-slot") ||
@@ -124,14 +113,23 @@ export const RenownView: React.FC = () => {
       }
       setSelectedCard(null);
     };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSelectedCard(null);
+        setPendingSwap(null);
+      }
+    };
     document.addEventListener("click", onDocClick);
-    return () => document.removeEventListener("click", onDocClick);
-  }, [selectedCard, setSelectedCard]);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("click", onDocClick);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [selectedCard, pendingSwap, setSelectedCard, setPendingSwap]);
 
   const cycleSort = () => {
     const order: DeckSortMode[] = ["cost", "tier", "id"];
-    const next = order[(order.indexOf(sortMode) + 1) % order.length];
-    setSortMode(next);
+    setSortMode(order[(order.indexOf(sortMode) + 1) % order.length]);
     audio.play("click");
   };
 
@@ -139,165 +137,43 @@ export const RenownView: React.FC = () => {
 
   return (
     <div className="cr-app-shell" role="region" aria-label="Renown SMP Deck Builder">
-      {/* Toast Notification */}
       {toastMessage && (
         <div className="cr-toast" role="status">
-          <Sparkles size={15} color="var(--accent-gold)" />
+          <Sparkles size={14} color="var(--accent-gold)" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Floating 60fps Drag Ghost Card (Mouse & Touch) */}
       {activeDrag && dragGhostMark && (
-        <div
-          className={`cr-drag-ghost rarity-${dragGhostMark.tier.toLowerCase()} ${
-            activeDrag.source === "socket" && !hoverDeckArea && hoverSlotIdx === null
-              ? "is-dropping-remove"
-              : ""
-          }`}
-          style={{
-            transform: `translate3d(${activeDrag.x - 42}px, ${activeDrag.y - 54}px, 0) rotate(3deg) scale(1.06)`
-          }}
-        >
-          <span className={`cr-cost-gem ${dragGhostMark.keystone ? "is-keystone-gem" : ""}`}>
-            {dragGhostMark.keystone ? "0N" : `${activeDrag.cost}N`}
-          </span>
-          <img
-            src={`assets/marks/mark_${String(dragGhostMark.id).padStart(2, "0")}.png`}
-            alt={dragGhostMark.name}
-          />
-          <span className="cr-ghost-label">
-            {activeDrag.source === "socket" && !hoverDeckArea && hoverSlotIdx === null
-              ? "Release to Remove"
-              : dragGhostMark.name}
-          </span>
-        </div>
+        <DragGhostCard
+          activeDrag={activeDrag}
+          mark={dragGhostMark}
+          hoverDeckArea={hoverDeckArea}
+          hoverSlotIdx={hoverSlotIdx}
+        />
       )}
 
-      {/* Compact Sticky Mini-Deck Bar when scrolled down */}
       {showStickyMiniDeck && mobileTab === "deck" && !pendingSwap && (
-        <div className="cr-sticky-mini-deck">
-          <div className="cr-mini-deck-inner">
-            <div className="cr-mini-slots">
-              {currentBelt.map((s, idx) => {
-                const m = s ? ALL_MARKS.find((x) => x.id === s.markId) : null;
-                const isKey = idx === KEYSTONE_SLOT_INDEX;
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    data-belt-slot={idx}
-                    className={`cr-mini-slot ${isKey ? "is-key" : ""} ${
-                      hoverSlotIdx === idx ? "is-drag-hover" : ""
-                    }`}
-                    onClick={() => {
-                      deckAnchorRef.current?.scrollIntoView({ behavior: "smooth" });
-                    }}
-                    title={m ? m.name : isKey ? "Empty Keystone (+1N Purist)" : "Empty Slot"}
-                  >
-                    {m ? (
-                      <img
-                        src={`assets/marks/mark_${String(m.id).padStart(2, "0")}.png`}
-                        alt={m.name}
-                      />
-                    ) : isKey ? (
-                      <Crown size={12} color="var(--accent-gold)" />
-                    ) : null}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="cr-mini-right">
-              <span className="cr-mini-notches font-tabular">
-                {totals.totalNotches}/{totals.effectiveBeltCapacity}N
-              </span>
-              <button
-                type="button"
-                className="renown-btn"
-                style={{ padding: "5px 9px" }}
-                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                aria-label="Scroll back to Battle Deck"
-              >
-                <ArrowUp size={13} />
-                <span className="hide-xs">Deck</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <StickyMiniDeck
+          currentBelt={currentBelt}
+          totals={totals}
+          hoverSlotIdx={hoverSlotIdx}
+          onScrollToDeck={() => deckAnchorRef.current?.scrollIntoView({ behavior: "smooth" })}
+        />
       )}
 
-      {/* Masthead Header */}
-      <header className="cr-top-header">
-        <div className="cr-brand">
-          <img
-            src="assets/pack.png"
-            alt="Renown SMP"
-            className="cr-brand-logo"
-            onError={(e) => {
-              (e.target as HTMLElement).style.display = "none";
-            }}
-          />
-          <div>
-            <h1 className="cr-brand-title">Renown Deck Builder</h1>
-            <div className="cr-brand-sub">9-Slot Belt · 12 Keystones · +1N Purist</div>
-          </div>
-        </div>
+      <MastheadHeader
+        sfxEnabled={sfxEnabled}
+        onToggleSfx={handleToggleSfx}
+        onOpenImport={() => setImportModalOpen(true)}
+        onCopyCommand={handleCopyInGameCommand}
+        onCopyShareUrl={handleCopyShareUrl}
+        onOpenGuide={() => {
+          setDesktopDrawer("guide");
+          audio.play("click");
+        }}
+      />
 
-        <div className="cr-header-actions">
-          <button
-            type="button"
-            className="renown-btn hide-mobile"
-            onClick={() => setImportModalOpen(true)}
-          >
-            <Download size={13} />
-            <span>Import</span>
-          </button>
-
-          <button
-            type="button"
-            className="renown-btn renown-btn-gold"
-            onClick={handleCopyInGameCommand}
-            title="Copy /renown loadout command"
-          >
-            <Copy size={13} />
-            <span className="hide-xs">Copy Command</span>
-          </button>
-
-          <button
-            type="button"
-            className="renown-btn"
-            onClick={handleCopyShareUrl}
-            title="Copy shareable deck URL"
-          >
-            <Share2 size={13} />
-            <span className="hide-mobile">Share</span>
-          </button>
-
-          <button
-            type="button"
-            className="renown-btn hide-mobile"
-            onClick={() => {
-              setDesktopDrawer("guide");
-              audio.play("click");
-            }}
-          >
-            <BookOpen size={13} />
-            <span>Codex Guide</span>
-          </button>
-
-          <button
-            type="button"
-            className="renown-btn"
-            onClick={handleToggleSfx}
-            aria-label="Toggle Sound Effects"
-          >
-            {sfxEnabled ? <Volume2 size={14} color="var(--accent-gold)" /> : <VolumeX size={14} />}
-          </button>
-        </div>
-      </header>
-
-      {/* Main Content Stage (Switches cleanly on Mobile Bottom Tab Bar) */}
       <div className={`cr-tab-view ${mobileTab === "deck" ? "is-active-tab" : "hide-on-mobile"}`}>
         <div ref={deckAnchorRef}>
           <RenownBelt
@@ -347,11 +223,8 @@ export const RenownView: React.FC = () => {
             onUnequipSlot={unequipSlot}
             onClearDeck={clearCurrentBelt}
             onOpenStatsDrawer={() => {
-              if (window.innerWidth <= 768) {
-                setMobileTab("stats");
-              } else {
-                setDesktopDrawer("stats");
-              }
+              if (window.innerWidth <= 768) setMobileTab("stats");
+              else setDesktopDrawer("stats");
               audio.play("click");
             }}
             getEffectiveCost={getEffectiveCost}
@@ -412,7 +285,6 @@ export const RenownView: React.FC = () => {
         />
       </div>
 
-      {/* Mobile Tab 2: Stats, Presets & Sync */}
       {mobileTab === "stats" && (
         <div className="cr-mobile-only-pane">
           <RenownInspector
@@ -431,7 +303,6 @@ export const RenownView: React.FC = () => {
         </div>
       )}
 
-      {/* Mobile Tab 3: Codex Guide & 67 Chronicles */}
       {mobileTab === "guide" && (
         <div className="cr-mobile-only-pane">
           <CodexGuideContent
@@ -444,7 +315,6 @@ export const RenownView: React.FC = () => {
         </div>
       )}
 
-      {/* Desktop Slide-Over Drawers (Progressive Disclosure - Zero Dual Wide Sidebars!) */}
       <SlideOverDrawer
         open={desktopDrawer === "stats"}
         onClose={() => setDesktopDrawer("none")}
@@ -486,7 +356,6 @@ export const RenownView: React.FC = () => {
         />
       </SlideOverDrawer>
 
-      {/* Modals / Bottom Sheets */}
       <CardDetailSheet
         markId={detailMarkId}
         onClose={() => setDetailMarkId(null)}
@@ -503,9 +372,7 @@ export const RenownView: React.FC = () => {
       <QuickPickerModal
         slotIdx={quickPickerSlot}
         onClose={() => setQuickPickerSlot(null)}
-        onSelectMark={(markId, sIdx, rank) => {
-          equipMark(markId, sIdx, rank);
-        }}
+        onSelectMark={(markId, sIdx, rank) => equipMark(markId, sIdx, rank)}
         viewMode={viewMode}
         ownedMarks={ownedMarks}
         currentBelt={currentBelt}
@@ -523,44 +390,13 @@ export const RenownView: React.FC = () => {
         onUnlockAll={handleUnlockAll}
       />
 
-      {/* Native Mobile Bottom Navigation Bar */}
-      <nav className="cr-mobile-bottom-nav" aria-label="Mobile Navigation">
-        <button
-          type="button"
-          className={`cr-mobile-nav-btn ${mobileTab === "deck" ? "active" : ""}`}
-          onClick={() => {
-            setMobileTab("deck");
-            audio.play("click");
-          }}
-        >
-          <Swords size={18} />
-          <span>Battle Deck</span>
-        </button>
-
-        <button
-          type="button"
-          className={`cr-mobile-nav-btn ${mobileTab === "stats" ? "active" : ""}`}
-          onClick={() => {
-            setMobileTab("stats");
-            audio.play("click");
-          }}
-        >
-          <SlidersHorizontal size={18} />
-          <span>Stats &amp; Presets</span>
-        </button>
-
-        <button
-          type="button"
-          className={`cr-mobile-nav-btn ${mobileTab === "guide" ? "active" : ""}`}
-          onClick={() => {
-            setMobileTab("guide");
-            audio.play("click");
-          }}
-        >
-          <BookOpen size={18} />
-          <span>Codex Guide</span>
-        </button>
-      </nav>
+      <MobileBottomNav
+        mobileTab={mobileTab}
+        onSelectTab={(t) => {
+          setMobileTab(t);
+          audio.play("click");
+        }}
+      />
     </div>
   );
 };

@@ -3,7 +3,6 @@ import { ALL_MARKS, MarkItem } from "../data/renownData";
 import { RenownAudioEngine } from "../utils/renownAudio";
 import {
   BELT_TOTAL_SLOTS,
-  KEYSTONE_SLOT_INDEX,
   BeltCapacityTier,
   DECK_PRESETS,
   DeckPreset,
@@ -14,6 +13,12 @@ import {
   findValidSwapSlots,
   EligibilityResult
 } from "./deckValidation";
+import {
+  resolveEquipToBelt,
+  resolveSwapIntoBelt,
+  resolvePointerDropOnBelt,
+  BeltMutationOutcome
+} from "./deckMutations";
 import {
   STORAGE_KEY_BUILD_SLOTS,
   STORAGE_KEY_ACTIVE_DECK,
@@ -103,6 +108,17 @@ export function useRenownDeck() {
     }, 2800);
   };
 
+  const applyOutcome = (outcome: BeltMutationOutcome): boolean => {
+    if (outcome.sound) audio.play(outcome.sound);
+    if (outcome.toast) showToast(outcome.toast);
+    if (!outcome.ok || !outcome.nextBelt) return false;
+    setBuildSlots((prev) => ({ ...prev, [activeBuildSlot]: outcome.nextBelt! }));
+    setSelectedCard(null);
+    setPendingSwap(null);
+    if (outcome.pulsedSlot !== undefined) pulseSlot(outcome.pulsedSlot);
+    return true;
+  };
+
   const setActiveBuildSlot = (slot: number) => {
     setActiveBuildSlotState(slot);
     setSelectedCard(null);
@@ -152,92 +168,28 @@ export function useRenownDeck() {
     return markRanks[markId] || 1;
   };
 
-  const checkEligibility = (
-    mark: MarkItem,
-    rank: number,
-    targetSlotIdx?: number
-  ): EligibilityResult =>
-    checkMarkEligibility(
-      currentBelt,
-      mark,
-      rank,
-      targetSlotIdx,
-      viewMode,
-      ownedMarks,
-      beltCapacity
-    );
+  const checkEligibility = (mark: MarkItem, rank: number, targetSlotIdx?: number): EligibilityResult =>
+    checkMarkEligibility(currentBelt, mark, rank, targetSlotIdx, viewMode, ownedMarks, beltCapacity);
 
   const equipMark = (markId: number, targetSlotIdx?: number, forcedRank?: number): boolean => {
     const mark = ALL_MARKS.find((m) => m.id === markId);
     if (!mark) return false;
-
     const rankToUse = forcedRank || getRankForMark(markId);
-    let destIdx = targetSlotIdx;
+    return applyOutcome(
+      resolveEquipToBelt(currentBelt, mark, rankToUse, targetSlotIdx, viewMode, ownedMarks, beltCapacity)
+    );
+  };
 
-    if (mark.keystone) {
-      destIdx = KEYSTONE_SLOT_INDEX;
-    } else {
-      if (destIdx === KEYSTONE_SLOT_INDEX) {
-        audio.play("error");
-        showToast("Center Slot 5 only accepts Zero-Notch Keystones.");
-        return false;
-      }
-      if (destIdx === undefined) {
-        if (mark.active && totals.equippedActive) {
-          const existingActiveIdx = currentBelt.findIndex((s) => {
-            const m = s ? ALL_MARKS.find((x) => x.id === s.markId) : null;
-            return m?.active === true;
-          });
-          if (existingActiveIdx !== -1) destIdx = existingActiveIdx;
-        }
-        if (destIdx === undefined) {
-          destIdx = currentBelt.findIndex((s, i) => s === null && i !== KEYSTONE_SLOT_INDEX);
-        }
-      }
-    }
-
-    if (destIdx === -1 || destIdx === undefined || destIdx >= BELT_TOTAL_SLOTS) {
-      return false;
-    }
-
-    const check = checkEligibility(mark, rankToUse, destIdx);
-    if (!check.eligible && check.actionType === "disabled") {
-      audio.play("error");
-      showToast(check.reason || "Cannot equip card.");
-      return false;
-    }
-
+  const unequipSlot = (slotIdx: number) => {
+    if (!currentBelt[slotIdx]) return;
     const tentative = [...currentBelt];
-    if (mark.active) {
-      const existingActiveIdx = tentative.findIndex((s) => {
-        const m = s ? ALL_MARKS.find((x) => x.id === s.markId) : null;
-        return m?.active === true;
-      });
-      if (existingActiveIdx !== -1 && existingActiveIdx !== destIdx) {
-        tentative[existingActiveIdx] = null;
-      }
-    }
-
-    const existingIdx = tentative.findIndex((s) => s?.markId === markId);
-    if (existingIdx !== -1 && existingIdx !== destIdx) {
-      tentative[existingIdx] = null;
-    }
-
-    tentative[destIdx] = { markId, rank: rankToUse };
+    tentative[slotIdx] = null;
     setBuildSlots((prev) => ({ ...prev, [activeBuildSlot]: tentative }));
     setSelectedCard(null);
     setPendingSwap(null);
-    pulseSlot(destIdx);
-    audio.play(mark.keystone ? "success" : "equip");
-    return true;
+    audio.play("unequip");
   };
 
-  /**
-   * Clash Royale Primary "Use" Action:
-   * - If equipped -> removes from belt
-   * - If fits directly (or replaces Keystone/Active directly) -> snaps into belt
-   * - Otherwise enters interactive Wiggle Swap Mode highlighting valid replacement slots!
-   */
   const handleUseCard = (mark: MarkItem, forcedRank?: number) => {
     const equippedIdx = currentBelt.findIndex((s) => s?.markId === mark.id);
     if (equippedIdx !== -1) {
@@ -260,13 +212,11 @@ export function useRenownDeck() {
       ownedMarks,
       beltCapacity
     );
-
     if (validSlots.length > 0) {
       setSelectedCard(null);
       setPendingSwap({ markId: mark.id, rank: rankToUse, validSlots });
       audio.play("click");
-      const deckEl = document.querySelector("[data-battle-deck]");
-      deckEl?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      document.querySelector("[data-battle-deck]")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
       return;
     }
 
@@ -281,48 +231,9 @@ export function useRenownDeck() {
       showToast("Tap one of the highlighted wiggling slots to swap.");
       return;
     }
-
     const mark = ALL_MARKS.find((m) => m.id === pendingSwap.markId);
     if (!mark) return;
-
-    const tentative = [...currentBelt];
-    if (mark.keystone) {
-      // Clear chosen passive slot (to step down from +1N Purist) & socket Keystone into Center Slot 5
-      if (slotIdx !== KEYSTONE_SLOT_INDEX) {
-        tentative[slotIdx] = null;
-      }
-      tentative[KEYSTONE_SLOT_INDEX] = { markId: mark.id, rank: pendingSwap.rank };
-      setBuildSlots((prev) => ({ ...prev, [activeBuildSlot]: tentative }));
-      setPendingSwap(null);
-      pulseSlot(KEYSTONE_SLOT_INDEX);
-      audio.play("success");
-      return;
-    }
-
-    if (mark.active) {
-      const existingActiveIdx = tentative.findIndex((s) => {
-        const m = s ? ALL_MARKS.find((x) => x.id === s.markId) : null;
-        return m?.active === true;
-      });
-      if (existingActiveIdx !== -1) tentative[existingActiveIdx] = null;
-    }
-
-    tentative[slotIdx] = { markId: mark.id, rank: pendingSwap.rank };
-    setBuildSlots((prev) => ({ ...prev, [activeBuildSlot]: tentative }));
-    setPendingSwap(null);
-    pulseSlot(slotIdx);
-    audio.play("equip");
-  };
-
-  const unequipSlot = (slotIdx: number) => {
-    const item = currentBelt[slotIdx];
-    if (!item) return;
-    const tentative = [...currentBelt];
-    tentative[slotIdx] = null;
-    setBuildSlots((prev) => ({ ...prev, [activeBuildSlot]: tentative }));
-    setSelectedCard(null);
-    setPendingSwap(null);
-    audio.play("unequip");
+    applyOutcome(resolveSwapIntoBelt(currentBelt, mark, pendingSwap.rank, slotIdx));
   };
 
   const setCardRank = (markId: number, newRank: number) => {
@@ -356,68 +267,16 @@ export function useRenownDeck() {
   };
 
   const handlePointerDropOnSlot = (drag: ActivePointerDrag, targetSlotIdx: number) => {
-    const mark = ALL_MARKS.find((m) => m.id === drag.markId);
-    if (!mark) return;
-
-    if (drag.source === "library") {
-      if (mark.keystone && targetSlotIdx !== KEYSTONE_SLOT_INDEX) {
-        // Auto-route Keystone drop to Center Slot 5 if eligible!
-        const direct = checkEligibility(mark, drag.rank, KEYSTONE_SLOT_INDEX);
-        if (direct.eligible) {
-          equipMark(mark.id, KEYSTONE_SLOT_INDEX, drag.rank);
-          return;
-        }
-      }
-      const swapped = findValidSwapSlots(
+    applyOutcome(
+      resolvePointerDropOnBelt(
         currentBelt,
-        mark,
-        drag.rank,
+        drag,
+        targetSlotIdx,
         viewMode,
         ownedMarks,
         beltCapacity
-      );
-      if (currentBelt[targetSlotIdx] && swapped.includes(targetSlotIdx)) {
-        const tentative = [...currentBelt];
-        if (mark.keystone) {
-          tentative[targetSlotIdx] = null;
-          tentative[KEYSTONE_SLOT_INDEX] = { markId: mark.id, rank: drag.rank };
-          setBuildSlots((prev) => ({ ...prev, [activeBuildSlot]: tentative }));
-          pulseSlot(KEYSTONE_SLOT_INDEX);
-          audio.play("success");
-          return;
-        }
-        if (mark.active) {
-          const ex = tentative.findIndex((s) => ALL_MARKS.find((x) => x.id === s?.markId)?.active);
-          if (ex !== -1) tentative[ex] = null;
-        }
-        tentative[targetSlotIdx] = { markId: mark.id, rank: drag.rank };
-        setBuildSlots((prev) => ({ ...prev, [activeBuildSlot]: tentative }));
-        pulseSlot(targetSlotIdx);
-        audio.play("equip");
-        return;
-      }
-      equipMark(mark.id, targetSlotIdx, drag.rank);
-      return;
-    }
-
-    // Rearranging within Battle Deck sockets
-    const fromIdx = drag.fromSlotIdx;
-    if (fromIdx === undefined || fromIdx === targetSlotIdx) return;
-
-    if (fromIdx === KEYSTONE_SLOT_INDEX || targetSlotIdx === KEYSTONE_SLOT_INDEX) {
-      audio.play("error");
-      showToast("Center Slot 5 is reserved exclusively for Keystones.");
-      return;
-    }
-
-    const tentative = [...currentBelt];
-    const temp = tentative[targetSlotIdx];
-    tentative[targetSlotIdx] = tentative[fromIdx];
-    tentative[fromIdx] = temp;
-    setBuildSlots((prev) => ({ ...prev, [activeBuildSlot]: tentative }));
-    setSelectedCard(null);
-    pulseSlot(targetSlotIdx);
-    audio.play("equip");
+      )
+    );
   };
 
   const applyPreset = (preset: DeckPreset) => {
@@ -444,14 +303,12 @@ export function useRenownDeck() {
 
     return [...list].sort((a, b) => {
       if (sortMode === "cost") {
-        // Keystones (0N) first, then ascending Notch cost, then tier
         if (a.keystone !== b.keystone) return a.keystone ? -1 : 1;
         if (a.cost !== b.cost) return a.cost - b.cost;
         return b.tierNum - a.tierNum;
       }
       if (sortMode === "tier") {
-        if (b.tierNum !== a.tierNum) return b.tierNum - a.tierNum;
-        return a.id - b.id;
+        return b.tierNum !== a.tierNum ? b.tierNum - a.tierNum : a.id - b.id;
       }
       return a.id - b.id;
     });

@@ -2,26 +2,24 @@ import React from "react";
 import {
   Crown,
   Trash2,
-  Sparkles,
   Zap,
   Lock,
-  Info,
-  RotateCcw,
+  Plus,
   SlidersHorizontal
 } from "lucide-react";
 import { ALL_MARKS, MarkItem } from "../data/renownData";
 import {
   BeltCapacityTier,
-   BeltTotals,
+  BeltTotals,
   EquippedSlot,
-  KEYSTONE_SLOT_INDEX,
-  PASSIVE_OFFENSE_CAP
+  KEYSTONE_SLOT_INDEX
 } from "./deckValidation";
 import { DECK_SLOT_IDS } from "./renownStorage";
 import { CombatStats } from "./renownImportExport";
 import { SlidingSegmented } from "./SlidingSegmented";
 import { ActivePointerDrag } from "./usePointerDeckDrag";
 import { PendingSwapState, SelectedCardState } from "./useRenownDeck";
+import { BeltFooter, BeltSelectedBar, BeltSwapBanner } from "./BeltSubbars";
 
 interface RenownBeltProps {
   currentBelt: (EquippedSlot | null)[];
@@ -83,11 +81,7 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
   onOpenStatsDrawer,
   getEffectiveCost
 }) => {
-  const { totalNotches, effectiveBeltCapacity, remainingNotches, offenseNotches, equippedKeystone } =
-    totals;
-  const hasKeystone = Boolean(equippedKeystone);
-  const isOverBudget = totalNotches > effectiveBeltCapacity;
-
+  const { remainingNotches } = totals;
   const swapMark = pendingSwap ? ALL_MARKS.find((m) => m.id === pendingSwap.markId) : null;
   const swapCost = swapMark && pendingSwap ? getEffectiveCost(swapMark, pendingSwap.rank) : 0;
 
@@ -101,11 +95,12 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
     ? ALL_MARKS.find((m) => m.id === selectedSlotItem.markId) || null
     : null;
 
-  const renderSlotCard = (idx: number, extraClass = "") => {
+  const renderSlotCard = (idx: number) => {
     const isKeystoneAnchor = idx === KEYSTONE_SLOT_INDEX;
     const slotItem = currentBelt[idx];
     const mark = slotItem ? ALL_MARKS.find((m) => m.id === slotItem.markId) || null : null;
     const effCost = mark && slotItem ? getEffectiveCost(mark, slotItem.rank) : 0;
+    const isDiscounted = Boolean(mark && !mark.keystone && mark.cost >= 3 && slotItem?.rank === 3);
 
     const isSwapValid = Boolean(pendingSwap?.validSlots.includes(idx));
     const isSwapDimmed = Boolean(pendingSwap && !isSwapValid);
@@ -119,16 +114,14 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
     if (activeDrag) {
       if (isKeystoneAnchor) {
         dragStateClass = activeDrag.isKeystone ? "drop-valid" : "drop-invalid";
-      } else if (activeDrag.isKeystone) {
-        dragStateClass = "drop-invalid";
       } else {
-        dragStateClass = "drop-valid";
+        dragStateClass = activeDrag.isKeystone ? "drop-invalid" : "drop-valid";
       }
     }
 
     const isCapacityLocked =
       !slotItem && !isKeystoneAnchor && remainingNotches === 0 && !pendingSwap && !activeDrag;
-    const passiveNum = idx < KEYSTONE_SLOT_INDEX ? idx + 1 : idx;
+    const passiveOrdinal = idx < KEYSTONE_SLOT_INDEX ? idx + 1 : idx;
 
     const handleSlotClick = () => {
       if (shouldSuppressClick()) return;
@@ -154,13 +147,12 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
             ? `${mark.name} Rank ${slotItem?.rank}`
             : isKeystoneAnchor
             ? "Keystone Anchor Slot"
-            : `Empty Passive Slot ${passiveNum}`
+            : `Empty Passive Socket ${passiveOrdinal}`
         }
         className={[
           "cr-deck-slot",
           slotItem ? "is-occupied" : "is-empty",
           isKeystoneAnchor ? "is-keystone-slot" : "",
-          mark ? `rarity-${mark.tier.toLowerCase()}` : "",
           isSwapValid ? "is-wiggling" : "",
           isSwapDimmed ? "is-swap-dimmed" : "",
           isSelected ? "is-selected" : "",
@@ -168,8 +160,7 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
           isDragHover ? "is-drag-hover" : "",
           isDraggingFromHere ? "is-drag-origin" : "",
           isCapacityLocked ? "is-locked-cap" : "",
-          dragStateClass,
-          extraClass
+          dragStateClass
         ]
           .filter(Boolean)
           .join(" ")}
@@ -188,7 +179,11 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
       >
         {slotItem && mark ? (
           <>
-            <span className={`cr-cost-gem ${mark.keystone ? "is-keystone-gem" : ""}`}>
+            <span
+              className={`cr-cost-gem ${
+                mark.keystone || isDiscounted ? "is-gold-text" : ""
+              }`}
+            >
               {mark.keystone ? "0N" : `${effCost}N`}
             </span>
 
@@ -202,33 +197,35 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
               </span>
             ) : null}
 
-            <img
-              src={`assets/marks/mark_${String(mark.id).padStart(2, "0")}.png`}
-              alt={mark.name}
-              className="cr-slot-sprite"
-              draggable={false}
-            />
+            <div className="cr-slot-art">
+              <img
+                src={`assets/marks/mark_${String(mark.id).padStart(2, "0")}.png`}
+                alt={mark.name}
+                className="cr-slot-sprite"
+                draggable={false}
+              />
+            </div>
 
             <div className="cr-slot-footer">
               <span className="cr-slot-name">{mark.name}</span>
-              <span className="cr-slot-level">R{slotItem.rank}</span>
+              <span className={`cr-slot-level ${slotItem.rank === 3 ? "is-max-rank" : ""}`}>
+                R{slotItem.rank}
+              </span>
             </div>
           </>
         ) : isKeystoneAnchor ? (
           <div className="cr-empty-keystone">
-            <Crown size={18} color="var(--accent-gold)" />
+            <Crown size={17} color="var(--accent-gold)" />
             <span className="cr-empty-key-title">Keystone</span>
             <span className="cr-empty-key-sub">0N · +1N Purist</span>
           </div>
         ) : isCapacityLocked ? (
-          <div className="cr-empty-passive">
-            <Lock size={13} />
-            <span>Full</span>
+          <div className="cr-empty-socket is-full-socket" aria-hidden="true">
+            <Lock size={12} />
           </div>
         ) : (
-          <div className="cr-empty-passive">
-            <span className="cr-empty-num">+{remainingNotches}N</span>
-            <span className="cr-empty-sub">Slot {passiveNum}</span>
+          <div className="cr-empty-socket" aria-hidden="true">
+            <Plus size={15} strokeWidth={1.8} />
           </div>
         )}
       </div>
@@ -247,7 +244,6 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
       data-battle-deck="true"
       aria-label="Battle Deck"
     >
-      {/* Top Deck Bar: 5 Clash Royale Deck Slots + Belt Tier + Quick Actions */}
       <div className="cr-deck-topbar">
         <div className="cr-deck-tabs-group">
           <span className="cr-deck-label">Battle Deck</span>
@@ -289,39 +285,20 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
         </div>
       </div>
 
-      {/* Clash Royale Interactive Swap Mode Banner */}
       {pendingSwap && swapMark && (
-        <div className="cr-swap-banner" role="status">
-          <div className="cr-swap-banner-info">
-            <img
-              src={`assets/marks/mark_${String(swapMark.id).padStart(2, "0")}.png`}
-              alt={swapMark.name}
-              className="cr-swap-thumb"
-            />
-            <div>
-              <div className="cr-swap-title">
-                Select a wiggling slot to swap in <strong>{swapMark.name}</strong> (
-                {swapMark.keystone ? "0N Keystone" : `${swapCost}N`})
-              </div>
-              <div className="cr-swap-sub">
-                {swapMark.keystone
-                  ? "Clears 1 passive card to step down from +1N Purist and sockets Keystone"
-                  : "Tap any highlighted card in your Battle Deck below"}
-              </div>
-            </div>
-          </div>
-          <button type="button" className="renown-btn" onClick={onCancelSwap}>
-            Cancel
-          </button>
-        </div>
+        <BeltSwapBanner
+          swapMark={swapMark}
+          swapCost={swapCost}
+          onCancelSwap={onCancelSwap}
+        />
       )}
 
-      {/* Desktop 9-Across Symmetrical Belt (4 Left + Center Keystone + 4 Right) */}
+      {/* Desktop 9-Across Symmetrical Belt: 4 Left + Center Keystone Pedestal + 4 Right */}
       <div className="cr-deck-desktop-row">
         {currentBelt.map((_, idx) => renderSlotCard(idx))}
       </div>
 
-      {/* Mobile Clash Royale Layout: Prominent Keystone Pedestal + 4x2 Battle Deck Grid */}
+      {/* Mobile Clash Royale Layout: Keystone Anchor Bar + 4x2 Battle Deck Grid */}
       <div className="cr-deck-mobile-layout">
         <div
           data-belt-slot={KEYSTONE_SLOT_INDEX}
@@ -357,17 +334,17 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
                   draggable={false}
                 />
               ) : (
-                <Crown size={20} color="var(--accent-gold)" />
+                <Crown size={18} color="var(--accent-gold)" />
               )}
             </div>
-            <div style={{ minWidth: 0 }}>
+            <div className="cr-mobile-key-text">
               <div className="cr-mobile-key-title">
                 {keystoneMark ? keystoneMark.name : "Empty Keystone Anchor"}
               </div>
               <div className="cr-mobile-key-sub">
                 {keystoneMark && keystoneItem
-                  ? `Zero-Notch Keystone · Rank ${keystoneItem.rank} · ${keystoneMark.domain}`
-                  : "Tap to socket 1 of 12 Keystones (0N), or keep +1N Purist"}
+                  ? `Keystone · Rank ${keystoneItem.rank} · ${keystoneMark.domain}`
+                  : "Tap for 0N Keystone, or keep +1N Purist"}
               </div>
             </div>
           </div>
@@ -381,130 +358,20 @@ export const RenownBelt: React.FC<RenownBeltProps> = ({
         </div>
       </div>
 
-      {/* Inline Selected Belt Card Action Tray (Zero off-screen viewport bugs!) */}
       {selectedBeltSlotIdx !== null && selectedSlotItem && selectedSlotMark && !pendingSwap && (
-        <div className="cr-belt-selected-bar">
-          <div className="cr-selected-meta">
-            <img
-              src={`assets/marks/mark_${String(selectedSlotMark.id).padStart(2, "0")}.png`}
-              alt={selectedSlotMark.name}
-              className="cr-swap-thumb"
-            />
-            <div style={{ minWidth: 0 }}>
-              <div className="cr-selected-name">
-                {selectedSlotMark.name}{" "}
-                <span style={{ color: "var(--accent-gold)" }}>
-                  ({selectedSlotMark.keystone ? "0N" : `${getEffectiveCost(selectedSlotMark, selectedSlotItem.rank)}N`})
-                </span>
-              </div>
-              <div className="cr-selected-desc">
-                {selectedSlotMark.desc.split(" | ")[selectedSlotItem.rank - 1] || selectedSlotMark.desc}
-              </div>
-            </div>
-          </div>
-
-          <div className="cr-selected-controls">
-            <div className="renown-rank-selector">
-              {[1, 2, 3].map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  className={`renown-rank-btn ${selectedSlotItem.rank === r ? "active" : ""}`}
-                  onClick={() => onSetCardRank(selectedSlotMark.id, r)}
-                >
-                  R{r}
-                </button>
-              ))}
-            </div>
-
-            <button
-              type="button"
-              className="renown-btn"
-              onClick={() => onOpenCardInfo(selectedSlotMark.id)}
-            >
-              <Info size={13} />
-              <span>Info</span>
-            </button>
-
-            <button
-              type="button"
-              className="renown-btn"
-              onClick={() => onOpenEmptySlotPicker(selectedBeltSlotIdx)}
-            >
-              <RotateCcw size={13} />
-              <span>Swap</span>
-            </button>
-
-            <button
-              type="button"
-              className="renown-btn cr-btn-danger"
-              onClick={() => onUnequipSlot(selectedBeltSlotIdx)}
-            >
-              <Trash2 size={13} />
-              <span>Remove</span>
-            </button>
-          </div>
-        </div>
+        <BeltSelectedBar
+          slotIdx={selectedBeltSlotIdx}
+          slotItem={selectedSlotItem}
+          mark={selectedSlotMark}
+          effectiveCost={getEffectiveCost(selectedSlotMark, selectedSlotItem.rank)}
+          onSetCardRank={onSetCardRank}
+          onOpenCardInfo={onOpenCardInfo}
+          onOpenSlotPicker={onOpenEmptySlotPicker}
+          onUnequipSlot={onUnequipSlot}
+        />
       )}
 
-      {/* Compact Notch Elixir Meter & Live Stats Footer */}
-      <div className="cr-deck-footer">
-        <div className="cr-notch-meter-group">
-          <div className="cr-meter-pill">
-            <Sparkles size={13} color="var(--accent-gold)" />
-            <span className="text-secondary">Notches:</span>
-            <strong
-              className="font-tabular"
-              style={{
-                color: isOverBudget
-                  ? "var(--accent-warning)"
-                  : totalNotches === effectiveBeltCapacity
-                  ? "var(--accent-gold)"
-                  : "var(--text-primary)"
-              }}
-            >
-              {totalNotches} / {effectiveBeltCapacity}N
-              {!hasKeystone ? " (+1N Purist)" : ""}
-            </strong>
-          </div>
-
-          <div className="cr-notch-segments" aria-hidden="true">
-            {Array.from({ length: effectiveBeltCapacity }).map((_, i) => (
-              <span
-                key={i}
-                className={`cr-notch-seg ${i < totalNotches ? "is-filled" : ""} ${
-                  !hasKeystone && i === effectiveBeltCapacity - 1 ? "is-purist-seg" : ""
-                }`}
-              />
-            ))}
-          </div>
-
-          <div className="cr-meter-pill">
-            <span className="text-secondary">Offense:</span>
-            <strong
-              className="font-tabular"
-              style={{
-                color:
-                  offenseNotches >= PASSIVE_OFFENSE_CAP
-                    ? "var(--accent-gold)"
-                    : "var(--text-primary)"
-              }}
-            >
-              {offenseNotches} / {PASSIVE_OFFENSE_CAP}N
-            </strong>
-          </div>
-        </div>
-
-        <div className="cr-live-stats-strip font-tabular">
-          <span>{(statsBonus.totalHp / 2).toFixed(1)} Hearts</span>
-          <span>·</span>
-          <span>{statsBonus.reach.toFixed(2)}m Reach</span>
-          <span>·</span>
-          <span>
-            {statsBonus.speedPct >= 0 ? `+${statsBonus.speedPct}%` : `${statsBonus.speedPct}%`} Speed
-          </span>
-        </div>
-      </div>
+      <BeltFooter totals={totals} statsBonus={statsBonus} />
     </section>
   );
 };
